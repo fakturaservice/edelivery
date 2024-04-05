@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<UpdateParticipant>
+    <Id>0</Id>
+    <OwnerBusinessKey>29633932</OwnerBusinessKey>
+    <Key>ENDPOINT</Key>
+    <KeyType>ENDPOINT TYPE</KeyType>
+    <UnitName>NAME OF BUSINESS</UnitName>
+    <UnitCVR>CVR</UnitCVR>
+    <GroupId>109391</GroupId>
+    <Bindings>
+        <Binding>
+            <Id>0</Id>
+            <NetworkTypeId>4</NetworkTypeId>
+            <ActivationDate>TODAY</ActivationDate>
+            <ExpirationDate></ExpirationDate>
+            <ServiceId>143843</ServiceId>
+        </Binding>
+        <Binding>
+            <Id>1</Id>
+            <NetworkTypeId>3</NetworkTypeId>
+            <ActivationDate>TODAY</ActivationDate>
+            <ExpirationDate></ExpirationDate>
+            <ServiceId>279441</ServiceId>
+        </Binding>
+    </Bindings>
+</UpdateParticipant>

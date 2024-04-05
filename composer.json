@@ -1,0 +1,18 @@
+{
+    "name": "fakturaservice/edelivery",
+    "description": "PHP Library for sending and receiving eDocuments on PEPPOL or NEMHANDEL network",
+    "type": "library",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Fakturaservice\\Edelivery\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "fakturaserviceTWL",
+            "email": "twl@fakturaservice.dk"
+        }
+    ],
+    "require": {}
+}
