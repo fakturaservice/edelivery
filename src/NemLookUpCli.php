@@ -165,7 +165,7 @@ class NemLookUpCli
     /**
      * @throws Exception
      */
-    public function lookupEndpointPeppol($endpoint, &$httpCode, $documentType=null): bool
+    public function lookupEndpointPeppol($endpoint, &$httpCode, $documentType=null, &$response = ""): bool
     {
         $this->_log->log("Input PEPPOL endpoint:\t$endpoint", Logger::LV_2);
 
@@ -179,7 +179,7 @@ class NemLookUpCli
         $url    = "http://{$hashOverRecipientID}.{$schemeID}.{$SMLDomain}";
 
         $this->_log->log("Calling URL:{$url}{$api}");
-        $this->get($api, $httpCode, 10, $url);
+        $response = $this->get($api, $httpCode, 10, $url);
 
         return ($httpCode == 200);
     }

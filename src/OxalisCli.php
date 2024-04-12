@@ -2,14 +2,17 @@
 
 namespace Fakturaservice\Edelivery;
 
+use DateInterval;
 use DateTime;
 use DOMDocument;
 use DOMXPath;
 use Exception;
 use mysqli;
+use SimpleXMLElement;
 use Fakturaservice\Edelivery\{
     util\LoggerInterface,
     util\Logger,
+    NemLookUpCli,
     OIOUBL\NetworkType
 };
 
@@ -25,6 +28,7 @@ class OxalisCli
     private DateTime $_today;
     private string $_className;
     private array $_errors;
+    private NemLookUpCli $_lookUpCli;
 
     /**
      * @throws Exception
@@ -40,6 +44,7 @@ class OxalisCli
         $this->_log->setChannel($this->_className);
         $this->_errors      = [];
         $this->_oxalisDB    = null;
+        $this->_lookUpCli   = new NemLookUpCli(clone($this->_log));
     }
 
     public function success(): bool
@@ -182,6 +187,247 @@ class OxalisCli
         $this->_oxalisDB->query($updateMsgContQuery);
     }
 
+    /**
+     * @throws Exception
+     */
+    public function createTSR(string $startDate, string $reporterId):string
+    {
+        $this->_log->log("Calling createTSR('$startDate')");
+        if(!isset($this->_oxalisDB))
+            return "";
+
+        $startDate      = new DateTime($startDate);
+        $endDate        = clone ($startDate);
+        $endDate->add(new DateInterval("P1M"));
+
+        $transactions  = $this->getTRSTransactions($startDate, $endDate);
+
+        foreach ($transactions as $id => $transaction) {
+            $this->_log->log("ID: $id");
+            $this->_log->log("CN:                   {$transaction["CN"]}");
+            $this->_log->log("document_type_id:     {$transaction["document_type_id"]}");
+            $this->_log->log("peppol_process_id:    {$transaction["peppol_process_id"]}");
+            $this->_log->log("direction:            {$transaction["direction"]}");
+            $this->_log->log("C:                    {$transaction["C"]}");
+        }
+        return "STOP";
+
+        $envelopeIds = [];
+        foreach ($transactions as $key => $value) {
+            $cn = $value['CN'];
+            $envelopeIds[$cn][] = $key;
+        }
+        foreach ($envelopeIds as $key => $ids)
+        {
+            $envelopeIds[$key] = "IN (" . implode(", ", $ids) . ") ";
+        }
+
+        $selectQuery    = "SELECT \n";
+        $selectQuery    .= "    '%s' AS 'CertCN', \n";
+        $selectQuery    .= "    mes.document_type_id, \n";
+        $selectQuery    .= "    mes.peppol_process_id, \n";
+        $selectQuery    .= "    mes.direction, \n";
+        $selectQuery    .= "    COUNT(*) as count \n";
+        $selectQuery    .= "FROM \n";
+        $selectQuery    .= "    Message AS mes \n";
+        $selectQuery    .= "WHERE \n";
+        $selectQuery    .= "    mes.status IN ('RECEIVED', 'SENT') AND \n";
+        $selectQuery    .= "    receipt_id %s \n";
+        $selectQuery    .= "GROUP BY mes.document_type_id, mes.peppol_process_id, mes.direction \n";
+        $selectQuery    .= "ORDER BY mes.document_type_id, mes.peppol_process_id, mes.direction; \n";
+
+        $SubtotalArray = [];
+        foreach ($envelopeIds as $cert => $ids)
+        {
+            $query = sprintf($selectQuery, $cert, $ids);
+            $res = $this->_oxalisDB->query($query);
+            while ($r = $res->fetch_assoc())
+            {
+                $documentTypeId     = explode("::", $r["document_type_id"], 2);
+                $peppolProcessId    = explode("::", $r["peppol_process_id"], 2);
+
+                $SubtotalArray["$cert{$r["document_type_id"]}{$r["peppol_process_id"]}"] = [
+                    "SP" => $cert,
+                    "DT" => $documentTypeId,
+                    "PR" => $peppolProcessId,
+                    "Incoming" => ($r["direction"] == "IN")?$r["count"]:"0",
+                    "Outgoing" => ($r["direction"] == "OUT")?$r["count"]:"0"
+                ];
+            }
+        }
+        $SubtotalArray      = array_values($SubtotalArray);
+        $SubtotalElements   = [];
+        foreach ($SubtotalArray as $key => $element)
+        {
+            $SubtotalElements[$key] = "<Subtotal type=\"PerSP-DT-PR\">";
+            $SubtotalElements[$key] .= "    <Key metaSchemeID=\"SP\" schemeID=\"CertSubjectCN\">{$element["SP"]}</Key>";
+            $SubtotalElements[$key] .= "    <Key metaSchemeID=\"DT\" schemeID=\"{$element["DT"][0]}\">{$element["DT"][1]}</Key>";
+            $SubtotalElements[$key] .= "    <Key metaSchemeID=\"PR\" schemeID=\"{$element["PR"][0]}\">{$element["PR"][1]}</Key>";
+            $SubtotalElements[$key] .= "    <Incoming>{$element["Incoming"]}</Incoming>";
+            $SubtotalElements[$key] .= "    <Outgoing>{$element["Outgoing"]}</Outgoing>";
+            $SubtotalElements[$key] .= "</Subtotal>";
+        }
+
+        $xml = $this->generateXml($SubtotalElements, $startDate, $endDate, $reporterId);
+        $this->_log->log("\n$xml", Logger::LV_2);
+        return $xml;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function generateXml(array $xmlStrings, DateTime $StartDate, DateTime $EndDate, $ReporterID) {
+
+        // Create a new DOMDocument
+        $doc = new DOMDocument();
+        $doc->preserveWhiteSpace = false; // Set preserveWhiteSpace to false
+        $doc->formatOutput = true; // Set formatOutput to true for proper indentation
+
+        $template   = file_get_contents(__DIR__ . "/TransactionStatisticsReportTemplate.xml");
+        $xmlStr     = sprintf(
+            $template,
+            $StartDate->format("Y-m-d"),
+            $EndDate->sub(new DateInterval("P1D"))->format("Y-m-d"),
+            $ReporterID);
+
+        // Load the template XML
+        $doc->loadXML($xmlStr);
+
+        $totalIncoming = 0;
+        $totalOutgoing = 0;
+
+        foreach ($xmlStrings as $xmlString) {
+            $subtotal = new DOMDocument();
+            $subtotal->preserveWhiteSpace = false;
+            $subtotal->formatOutput = true;
+            $subtotal->loadXML($xmlString);
+
+            // Get the Incoming and Outgoing values
+            $incoming = (int) $subtotal->getElementsByTagName('Incoming')->item(0)->nodeValue;
+            $outgoing = (int) $subtotal->getElementsByTagName('Outgoing')->item(0)->nodeValue;
+
+            // Sum up Incoming and Outgoing
+            $totalIncoming += $incoming;
+            $totalOutgoing += $outgoing;
+
+            // Import the Subtotal node to the main document
+            $importedSubtotal = $doc->importNode($subtotal->documentElement, true);
+            $doc->documentElement->insertBefore($importedSubtotal, $doc->getElementsByTagName('Total')->item(0)->nextSibling);
+        }
+
+        // Get the Total element
+        $totalElement = $doc->getElementsByTagName('Total')->item(0);
+
+        // Update the Total Incoming and Outgoing values
+        $totalElement->getElementsByTagName('Incoming')->item(0)->nodeValue = $totalIncoming;
+        $totalElement->getElementsByTagName('Outgoing')->item(0)->nodeValue = $totalOutgoing;
+
+        // Add additional Subtotal element if Total/Incoming or Total/Outgoing > 0
+        if ($totalIncoming > 0 || $totalOutgoing > 0) {
+            $newSubtotal = $doc->createElement('Subtotal');
+            $newSubtotal->setAttribute('type', 'PerTP');
+
+            $keyElement = $doc->createElement('Key');
+            $keyElement->setAttribute('metaSchemeID', 'TP');
+            $keyElement->setAttribute('schemeID', 'Peppol');
+            $keyElement->nodeValue = 'peppol-transport-as4-v2_0';
+
+            $incomingElement = $doc->createElement('Incoming', $totalIncoming);
+            $outgoingElement = $doc->createElement('Outgoing', $totalOutgoing);
+
+            $newSubtotal->appendChild($keyElement);
+            $newSubtotal->appendChild($incomingElement);
+            $newSubtotal->appendChild($outgoingElement);
+
+            $doc->documentElement->insertBefore($newSubtotal, $totalElement->nextSibling);
+        }
+
+        // Return the modified XML as string
+        return $doc->saveXML();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getTRSTransactions(DateTime $startDate, DateTime $endDate): array
+    {
+        if(!isset($this->_oxalisDB))
+            return [];
+
+        $this->_log->log("Start date:\t{$startDate->format("Y-m-01")}");
+        $this->_log->log("End date:\t{$endDate->format("Y-m-01")}");
+
+        $selectQuery    = "SELECT \n";
+        $selectQuery    .= "    CASE \n";
+        $selectQuery    .= "        WHEN mes.status = 'RECEIVED' THEN mes.sender \n";
+        $selectQuery    .= "        WHEN mes.status = 'SENT' THEN mes.receiver \n";
+        $selectQuery    .= "    END AS endpoint, \n";
+        $selectQuery    .= "    mes.document_type_id, \n";
+        $selectQuery    .= "    mes.peppol_process_id, \n";
+        $selectQuery    .= "    mes.direction, \n";
+        $selectQuery    .= "    COUNT(*) as count \n";
+        $selectQuery    .= "FROM \n";
+        $selectQuery    .= "    Message AS mes \n";
+        $selectQuery    .= "WHERE \n";
+        $selectQuery    .= "    mes.status IN ('RECEIVED', 'SENT') \n";
+        $selectQuery    .= "    AND CONVERT_TZ(mes.created_date, '+00:00', '+02:00') >= '{$startDate->format("Y-m-01 00:00:00")}' \n";
+        $selectQuery    .= "    AND CONVERT_TZ(mes.created_date, '+00:00', '+02:00') < '{$endDate->format("Y-m-01 00:00:00")}' \n";
+        $selectQuery    .= "GROUP BY \n";
+        $selectQuery    .= "    CASE \n";
+        $selectQuery    .= "        WHEN mes.status = 'RECEIVED' THEN mes.sender \n";
+        $selectQuery    .= "        WHEN mes.status = 'SENT' THEN mes.receiver \n";
+        $selectQuery    .= "    END, \n";
+        $selectQuery    .= "    mes.document_type_id, \n";
+        $selectQuery    .= "    mes.peppol_process_id, \n";
+        $selectQuery    .= "    mes.direction \n";
+        $selectQuery    .= "ORDER BY \n";
+        $selectQuery    .= "     mes.document_type_id, mes.peppol_process_id, endpoint, mes.direction; \n";
+
+        $this->_log->log("Query: $selectQuery");
+
+        $res            = $this->_oxalisDB->query($selectQuery);
+        $transactions   = $res->fetch_all(MYSQLI_ASSOC);
+
+        $this->_log->log("Result:");
+        $this->_log->log($transactions);
+        foreach ($transactions as $key => $transaction)
+        {
+            $endpoint = explode("::", $transaction["endpoint"]);
+            $htmlCode   = 0;
+            $response   = "";
+            $this->_lookUpCli->lookupEndpointPeppol(
+                end($endpoint),
+                $htmlCode,
+                $transaction["document_type_id"],
+                $response
+            );
+            $x509SubjectName    = $this->getX509SubjectName($response);
+            $transactions[$key] = array_merge($transaction, $x509SubjectName);
+        }
+
+        return $transactions;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function getX509SubjectName($xmlString): array
+    {
+        $xml = new SimpleXMLElement($xmlString);
+        $xml->registerXPathNamespace('ds', 'http://www.w3.org/2000/09/xmldsig#');
+        $x509SubjectName = $xml->xpath('//ds:X509SubjectName');
+        if (!empty($x509SubjectName)) {
+            $subjectName = (string)$x509SubjectName[0];
+            $pattern = '/CN=([^,]+),.*C=([^,]+)/';
+            if (preg_match($pattern, $subjectName, $matches)) {
+                $cn = $matches[1];
+                $c = $matches[2];
+                return ['CN' => $cn, 'C' => $c];
+            }
+        }
+        return [];
+    }
+
     public function stripSBD($eDocument)
     {
         $dom = new DomDocument();
@@ -226,11 +472,11 @@ class OxalisCli
         {
             return $eDocument;
         }
-
     }
 
     /**
-     * @throws \ORException
+     * @param $sbdDocumentXml
+     * @return mixed
      */
     private function getDocumentIdentificationTypeFromSBD($sbdDocumentXml)
     {
@@ -334,6 +580,45 @@ class OxalisCli
 
     }
 
+    /**
+     * @throws Exception
+     */
+    private function extractCommonNameFromX509Certificate($xmlString)
+    {
+        $xml            = new SimpleXMLElement($xmlString);
+        $securityToken  = $xml->xpath('//*[local-name()="Header"]/*[local-name()="Security"]/*[local-name()="BinarySecurityToken"]');
+        if(!isset($securityToken[0]))
+            return null;
+        $certData       = "-----BEGIN CERTIFICATE----- \n$securityToken[0]\n-----END CERTIFICATE----- \n";
+        $this->_log->log("Got Cert:\n$certData");
+        $certificate = openssl_x509_read($certData);
+        if($certificate)
+        {
+            $certDetails = openssl_x509_parse($certData);
+            return $certDetails['subject']['CN'] ?? null;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function extractMessageInfo($xmlString): array
+    {
+        $xml            = new SimpleXMLElement($xmlString);//Messaging
+        $timestamp      = $xml->xpath('//*[local-name()="Header"]/*[local-name()="Messaging"]/*[local-name()="SignalMessage"]/*[local-name()="MessageInfo"]/*[local-name()="Timestamp"]');
+        $messageId      = $xml->xpath('//*[local-name()="Header"]/*[local-name()="Messaging"]/*[local-name()="SignalMessage"]/*[local-name()="MessageInfo"]/*[local-name()="MessageId"]');
+        $refToMessageId = $xml->xpath('//*[local-name()="Header"]/*[local-name()="Messaging"]/*[local-name()="SignalMessage"]/*[local-name()="MessageInfo"]/*[local-name()="RefToMessageId"]');
+
+        return [
+            "Timestamp" => $timestamp[0]??null,
+            "MessageId" => $messageId[0]??null,
+            "RefToMessageId" => $refToMessageId[0]??null,
+        ];
+    }
 
 
     /**
@@ -350,8 +635,11 @@ class OxalisCli
             $this->_oxalisDB = null;
             return false;
         } else {
+            $this->_log->log("Connection to OXALIS DB succeeded");
             return true;
         }
     }
+
+
 
 }

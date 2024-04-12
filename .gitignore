@@ -47,6 +47,9 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Configuration files
+*.ini
+
 composer.phar
 composer.lock
 installComposer.sh

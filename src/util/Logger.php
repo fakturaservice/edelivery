@@ -26,12 +26,17 @@ class Logger implements LoggerInterface
      */
     private bool $_success;
     private bool $_useExceptions;
+    /**
+     * @var array|false|string
+     */
+    private $_environment;
 
     /**
      * @throws Exception
      */
-    public function __construct(int $debugLevel=0, bool $useLogFilePath=false, bool $useExceptions=false)
+    public function __construct(int $debugLevel=0, bool $useExceptions=false)
     {
+        $this->_environment     = getenv('APP_ENV');
         $this->_debugLevel      = $debugLevel;
         $this->_channel         = "";
         $this->_errorMsg        = null;
@@ -77,10 +82,19 @@ class Logger implements LoggerInterface
      */
     public function log($str, int $level=self::LV_3, string $err=self::LOG_OK)
     {
+        if($this->_environment == "dev")
+        {
+            $backtrace  = debug_backtrace();
+            $info       = str_pad(
+                (substr(basename($backtrace[0]["file"], ".php"), 0, self::STR_LEN_CH_NAME) . ":". $backtrace[0]["line"]),
+                self::STR_LEN_CH_NAME);
+        }
+        else
+            $info = "";
         if(is_array($str))
             $str = var_export($str, true) . "\n";
         else
-            $str = date("d-m-Y H:i:s") . "\t[$this->_channel]\t[$err]\t $str\n";
+            $str = date("d-m-Y H:i:s") . "\t[$this->_channel]\t[$info]\t[$err]\t $str\n";
         if($this->_debugLevel >= $level)
             echo $str;
         if($err != self::LOG_OK)

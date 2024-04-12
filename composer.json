@@ -19,6 +19,12 @@
         }
     },
     "require": {
-        "php": ">=7.4"
+        "php": ">=7.4",
+      "ext-dom": "*",
+      "ext-json": "*",
+      "ext-curl": "*",
+      "ext-openssl": "*",
+      "ext-simplexml": "*",
+      "ext-mysqli": "*"
     }
 }

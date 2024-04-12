@@ -2,19 +2,19 @@
 
 namespace Fakturaservice\Edelivery;
 
-
 use DOMDocument;
 use DOMElement;
 use DOMException;
 use DOMXPath;
 use Fakturaservice\Edelivery\OIOUBL\{
-    ProfileID,
     CustomizationID,
     EAS,
     EndpointID,
     ICD,
+    ProfileID,
     UNCL1001
 };
+
 
 class Converter
 {
@@ -50,6 +50,7 @@ class Converter
         $this->updateOrderReference($dom);
         $this->removeLanguageID($dom);
         $this->removeEmptyBuildingNumbers($dom);
+        $this->removePartyIdentificationSchemeID($dom);
         $this->removePartyTaxSchemeCompanyIDScheme($dom);
         $this->updateTaxSchemeID($dom);
         $this->removeSchemeAgencyIDAttributes($dom);
@@ -423,6 +424,36 @@ class Converter
         }
     }
 
+    private function removePartyIdentificationSchemeID(DOMDocument $dom)
+    {
+        $xpath = new DOMXPath($dom);
+        $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+        $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+
+        $partyIdentifications = $xpath->query('//cac:PartyIdentification/cbc:ID');
+
+        foreach ($partyIdentifications as $idElement) {
+            $schemeID   = $idElement->getAttribute('schemeID');
+            $idValue    = $idElement->nodeValue;
+
+            // Check if the schemeID attribute is present
+            if ($schemeID !== '') {
+                // Remove the schemeID attribute
+                $idElement->removeAttribute('schemeID');
+            }
+
+            // Check if the ID value contains ":"
+            if (strpos($idValue, ":") !== false) {
+                // Remove everything before ":"
+                $newIdValue = substr($idValue, strpos($idValue, ":") + 1);
+
+                // Update the node value
+                $idElement->nodeValue = $newIdValue;
+            }
+        }
+    }
+
+
     private function removePartyTaxSchemeCompanyIDScheme(DOMDocument $dom)
     {
         $xpath = new DOMXPath($dom);
@@ -539,10 +570,13 @@ class Converter
         // Check if PartyTaxScheme is present
         $partyTaxScheme = $xpath->query('//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme');
 
-        // Check if the attribute 'schemeID' in cac:AccountingCustomerParty/cac:Party/cbc:EndpointID is not equal to "0088"
-        $endpointIDSchemeID = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID/@schemeID)');
-        if ($partyTaxScheme->length === 0 && $endpointIDSchemeID !== "0088") {
-            // If not present and schemeID is not "0088", insert PartyTaxScheme after cac:PostalAddress
+        // Get the values of EndpointID and PartyIdentificationID
+        $endpointID             = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID)');
+        $partyIdentificationID  = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID)');
+
+        // Check if PartyTaxScheme is not present and EndpointID is different from PartyIdentificationID
+        if ($partyTaxScheme->length === 0 && $endpointID !== $partyIdentificationID) {
+            // Insert PartyTaxScheme after cac:PostalAddress
             $accountingCustomerParty = $xpath->query('//cac:AccountingCustomerParty/cac:Party')->item(0);
 
             if ($accountingCustomerParty instanceof DOMElement) {
@@ -551,7 +585,7 @@ class Converter
                 if ($postalAddress instanceof DOMElement) {
                     // Create new PartyTaxScheme block
                     $newPartyTaxScheme = $dom->createElement('cac:PartyTaxScheme');
-                    $newCompanyID = $dom->createElement('cbc:CompanyID', $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID)', $accountingCustomerParty));
+                    $newCompanyID = $dom->createElement('cbc:CompanyID', $partyIdentificationID);
                     $newTaxScheme = $dom->createElement('cac:TaxScheme');
                     $newTaxScheme->appendChild($dom->createElement('cbc:ID', 'VAT'));
 
@@ -565,6 +599,7 @@ class Converter
             }
         }
     }
+
 
     /**
      * @throws DOMException
@@ -588,7 +623,12 @@ class Converter
                 $newRegistrationName = $dom->createElement('cbc:RegistrationName', $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyName/cbc:Name)', $accountingCustomerParty));
                 // Append RegistrationName to PartyLegalEntity
                 $newPartyLegalEntity->appendChild($newRegistrationName);
-                if($partyIdentificationSchemeID !== ICD::GLN) {
+
+                // Get the values of EndpointID and PartyIdentificationID
+                $endpointID             = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID)');
+                $partyIdentificationID  = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID)');
+
+                if(($partyIdentificationSchemeID !== ICD::GLN) && ($endpointID !== $partyIdentificationID)) {
                     $newCompanyID = $dom->createElement('cbc:CompanyID', $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID)', $accountingCustomerParty));
                     $newPartyLegalEntity->appendChild($newCompanyID);
                 }

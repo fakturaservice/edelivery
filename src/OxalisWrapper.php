@@ -27,7 +27,7 @@ class OxalisWrapper
     const TRANSACTION_PARTICIPANT_SENDER    = "Sender";
     const TRANSACTION_PARTICIPANT_RECEIVER  = "Receiver";
 
-    private LoggerInterface $_log;
+    private Logger $_log;
 
     private array $_docTypesNsPrefixes = [
         CatalogueType::Invoice              => "xmlns:inv",
