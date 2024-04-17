@@ -36,4 +36,8 @@ abstract class CatalogueType
     const Statement = "Statement";
     const TransportationStatus = "TransportationStatus";
     const Waybill = "Waybill";
+
+    //reporting documents
+    const TransactionStatisticsReport   = "TransactionStatisticsReport";
+    const EndUserStatisticsReport       = "EndUserStatisticsReport";
 }

@@ -50,7 +50,7 @@ class Converter
         $this->updateOrderReference($dom);
         $this->removeLanguageID($dom);
         $this->removeEmptyBuildingNumbers($dom);
-        $this->removePartyIdentificationSchemeID($dom);
+//        $this->removePartyIdentificationSchemeID($dom);
         $this->removePartyTaxSchemeCompanyIDScheme($dom);
         $this->updateTaxSchemeID($dom);
         $this->removeSchemeAgencyIDAttributes($dom);

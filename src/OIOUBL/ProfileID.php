@@ -20,4 +20,6 @@ abstract class ProfileID
     const Peppol_BIS3_Invoice_Response      = "Peppol BIS3 Invoice Response";
     const peppol_poacc_invoice_response_3   = "urn:fdc:peppol.eu:poacc:bis:invoice_response:3";
 
+    const peppol_eu_edec_bis_reporting_1    = "TESTurn:fdc:peppol.eu:edec:bis:reporting:1.0";
+
 }

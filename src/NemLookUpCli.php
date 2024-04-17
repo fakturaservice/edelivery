@@ -167,7 +167,7 @@ class NemLookUpCli
      */
     public function lookupEndpointPeppol($endpoint, &$httpCode, $documentType=null, &$response = ""): bool
     {
-        $this->_log->log("Input PEPPOL endpoint:\t$endpoint", Logger::LV_2);
+        $this->_log->log("Looking up PEPPOL endpoint:\t$endpoint");
 
         $hashOverRecipientID    = "B-" . hash("md5", $endpoint);//B-9b0d086b042f77308607a1d7d1c748c3
         $schemeID               = self::SCHEME_ID;//"iso6523-actorid-upis"
@@ -317,16 +317,16 @@ class NemLookUpCli
         if($response === false)
         {
             $curlErr = curl_error($curl);
-            $this->_log->log(empty($curlErr)?"No error response received":$curlErr, Logger::LV_1, Logger::LOG_ERR);
+            $this->_log->log(empty($curlErr)?"No error response received":$curlErr, Logger::LV_2, Logger::LOG_ERR);
             curl_close($curl);
             return false;
         }
         curl_close($curl);
         $this->_log->log("Response code: $httpCode",
-            (($httpCode > 201)?Logger::LV_1:Logger::LV_3),
+            (($httpCode > 201)?Logger::LV_2:Logger::LV_3),
             (($httpCode > 201)?Logger::LOG_WARN:Logger::LOG_OK));
         $this->_log->log("Response: " . (empty($response)?"EMPTY RESPONSE":"\n\n$response\n\n"),
-            (($httpCode > 201)?Logger::LV_1:Logger::LV_3),
+            (($httpCode > 201)?Logger::LV_2:Logger::LV_3),
             (($httpCode > 201)?Logger::LOG_WARN:Logger::LOG_OK));
         return $response;
     }

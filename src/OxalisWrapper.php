@@ -23,6 +23,8 @@ use Fakturaservice\Edelivery\{
 
 class OxalisWrapper
 {
+    const DEFAULT_TSR_VERSION_ID            = "TEST1.0";
+    const DEFAULT_EUSR_VERSION_ID           = "TEST1.1";
     const DEFAULT_UBL_VERSION_ID            = "2.1";
     const TRANSACTION_PARTICIPANT_SENDER    = "Sender";
     const TRANSACTION_PARTICIPANT_RECEIVER  = "Receiver";
@@ -84,7 +86,7 @@ class OxalisWrapper
             $this->setDocTypeNS($documentIdentificationStandard);
 
         $this->setSbdDocumentIdentification(
-            $documentIdInstanceIdentifier,//$documentIdentificationStandard,
+            $documentIdentificationStandard,//$documentIdInstanceIdentifier
             $UBLVersionID,
             $this->generateUUID(),
             $today);
@@ -148,6 +150,18 @@ class OxalisWrapper
                     $xpath->query('//cac:ReceiverParty/cbc:EndpointID')->item(0)->textContent;
                 $endpoints[self::TRANSACTION_PARTICIPANT_RECEIVER]["endpointType"]  =
                     $xpath->query('//cac:ReceiverParty/cbc:EndpointID/@schemeID')->item(0)->textContent;
+                break;
+            }
+            case CatalogueType::TransactionStatisticsReport:
+            case CatalogueType::EndUserStatisticsReport:
+            {
+                //Need to use forceSender in function wrapSBD()
+                $endpoints[self::TRANSACTION_PARTICIPANT_SENDER]["endpoint"]        = "";
+                $endpoints[self::TRANSACTION_PARTICIPANT_SENDER]["endpointType"]    = "";
+
+                //Access point name: Official OpenPeppol Reporting AP
+                $endpoints[self::TRANSACTION_PARTICIPANT_RECEIVER]["endpoint"]      = "be0848934496";
+                $endpoints[self::TRANSACTION_PARTICIPANT_RECEIVER]["endpointType"]  = "9925";
                 break;
             }
         }
@@ -242,10 +256,13 @@ class OxalisWrapper
             CatalogueType::Invoice,
             CatalogueType::CreditNote,
             CatalogueType::Reminder,
-            CatalogueType::ApplicationResponse
+            CatalogueType::ApplicationResponse,
+            CatalogueType::TransactionStatisticsReport,
+            CatalogueType::EndUserStatisticsReport
         ]))
             $this->_log->log("'$firstElementTagName' Is not a valid document type", Logger::LV_1, Logger::LOG_ERR);
 
+        $this->_log->log("'$firstElementTagName' was found to be a valid document type");
         return $firstElementTagName;
     }
     /**
@@ -254,20 +271,31 @@ class OxalisWrapper
     private function getUBLVersionID(bool $usePayload=false): string
     {
         $xpath = new DOMXPath($this->_payloadDocument);
-        $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
-        $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
-
-        // Extract values from AccountingSupplierParty
-        $UBLVersionIDItm    = $xpath->query('//cbc:UBLVersionID')->item(0);
-        $UBLVersionID   = ($UBLVersionIDItm !== null)?$UBLVersionIDItm->textContent:self::DEFAULT_UBL_VERSION_ID;
-
-        if(!$usePayload)
+        if(in_array($this->_type, [CatalogueType::TransactionStatisticsReport, CatalogueType::EndUserStatisticsReport]))
         {
-            $this->_log->log("Found UBLVersionID:       $UBLVersionID (Falling back to default: '" .
-                self::DEFAULT_UBL_VERSION_ID . "')", Logger::LV_2, Logger::LOG_WARN);
-            return self::DEFAULT_UBL_VERSION_ID;
+            $xmlns          = $this->getDocumentIdentificationStandard();
+            $parts          = explode(':', $xmlns);
+            $UBLVersionID   = end($parts);
         }
-        $this->_log->log("Found UBLVersionID:       $UBLVersionID", Logger::LV_2);
+        else
+        {
+            $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+            $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+
+            // Extract values from AccountingSupplierParty
+            $UBLVersionIDItm    = $xpath->query('//cbc:UBLVersionID')->item(0);
+            $UBLVersionID   = ($UBLVersionIDItm !== null)?$UBLVersionIDItm->textContent:self::DEFAULT_UBL_VERSION_ID;
+
+            if(!$usePayload)
+            {
+                $this->_log->log("Found UBLVersionID:       $UBLVersionID (Falling back to default: '" .
+                    self::DEFAULT_UBL_VERSION_ID . "')", Logger::LV_2, Logger::LOG_WARN);
+                return self::DEFAULT_UBL_VERSION_ID;
+            }
+            $this->_log->log("Found UBLVersionID:       $UBLVersionID", Logger::LV_2);
+        }
+
+
         return $UBLVersionID;
     }
 
@@ -277,25 +305,40 @@ class OxalisWrapper
     private function getCustomizationID($glnCh, bool $usePayload=false): string
     {
         $xpath = new DOMXPath($this->_payloadDocument);
-        $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
-        $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
-
-        // Extract values from AccountingSupplierParty
-        $customizationIDItm = $xpath->query('//cbc:CustomizationID')->item(0);
-        $customizationID    = ($customizationIDItm !== null)?$customizationIDItm->textContent:self::DEFAULT_UBL_VERSION_ID;
-
-        if(!$usePayload)
+        if(in_array($this->_type, [CatalogueType::TransactionStatisticsReport, CatalogueType::EndUserStatisticsReport]))
         {
-            if($glnCh == NetworkType::PEPPOL_AS4)
-            {
-                $this->_log->log("Found CustomizationID:    $customizationID (Falling back to default: '" .
-                    CustomizationID::peppol_poacc_trns_mlr_3 . "')", Logger::LV_2, Logger::LOG_WARN);
-                return CustomizationID::peppol_poacc_trns_mlr_3;
-            }
-            $this->_log->log("Found CustomizationID:    $customizationID (Falling back to default: '" .
-                CustomizationID::oioubl_2_1 . "')", Logger::LV_2, Logger::LOG_WARN);
-            return CustomizationID::oioubl_2_1;
+            $xmlns = $this->_payloadDocument->lookupNamespaceURI(null);
+            $xpath->registerNamespace('ns', $xmlns);
+
+            // Extract values from AccountingSupplierParty
+            $customizationIDItm = $xpath->query('//ns:CustomizationID')->item(0);
+            $customizationID    = ($customizationIDItm !== null)?
+                $customizationIDItm->textContent:
+                (($this->_type == CatalogueType::TransactionStatisticsReport)?self::DEFAULT_TSR_VERSION_ID:self::DEFAULT_EUSR_VERSION_ID);
         }
+        else
+        {
+            $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+            $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+
+            // Extract values from AccountingSupplierParty
+            $customizationIDItm = $xpath->query('//cbc:CustomizationID')->item(0);
+            $customizationID    = ($customizationIDItm !== null)?$customizationIDItm->textContent:self::DEFAULT_UBL_VERSION_ID;
+
+            if(!$usePayload)
+            {
+                if($glnCh == NetworkType::PEPPOL_AS4)
+                {
+                    $this->_log->log("Found CustomizationID:    $customizationID (Falling back to default: '" .
+                        CustomizationID::peppol_poacc_trns_mlr_3 . "')", Logger::LV_2, Logger::LOG_WARN);
+                    return CustomizationID::peppol_poacc_trns_mlr_3;
+                }
+                $this->_log->log("Found CustomizationID:    $customizationID (Falling back to default: '" .
+                    CustomizationID::oioubl_2_1 . "')", Logger::LV_2, Logger::LOG_WARN);
+                return CustomizationID::oioubl_2_1;
+            }
+        }
+
         $this->_log->log("Found CustomizationID:    $customizationID", Logger::LV_2);
         return $customizationID;
     }
@@ -306,24 +349,39 @@ class OxalisWrapper
     private function getProfileID($glnCh, bool $usePayload=false): string
     {
         $xpath = new DOMXPath($this->_payloadDocument);
-        $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
-        $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
-
-        // Extract values from AccountingSupplierParty
-        $profileIDItm   = $xpath->query('//cbc:ProfileID')->item(0);
-        $profileID      = ($profileIDItm !== null)?$profileIDItm->textContent:ProfileID::procurement_BilSim_1_0;
-
-        if(!$usePayload)
+        if(in_array($this->_type, [CatalogueType::TransactionStatisticsReport, CatalogueType::EndUserStatisticsReport]))
         {
-            if($glnCh == NetworkType::PEPPOL_AS4)
+            $xmlns = $this->_payloadDocument->lookupNamespaceURI(null);
+            $xpath->registerNamespace('ns', $xmlns);
+
+            // Extract values from AccountingSupplierParty
+            $profileIDItm   = $xpath->query('//ns:ProfileID')->item(0);
+            $profileID      = ($profileIDItm !== null)?$profileIDItm->textContent:ProfileID::peppol_eu_edec_bis_reporting_1;
+        }
+        else
+        {
+            $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+            $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+
+            // Extract values from AccountingSupplierParty
+            $profileIDItm   = $xpath->query('//cbc:ProfileID')->item(0);
+            $profileID      = ($profileIDItm !== null)?$profileIDItm->textContent:ProfileID::procurement_BilSim_1_0;
+
+            if(!$usePayload)
             {
+                if($glnCh == NetworkType::PEPPOL_AS4)
+                {
+                    $this->_log->log("Found profileID:          $profileID (Falling back to default: '" .
+                        ProfileID::peppol_poacc_bis_mlr_3 . "')", Logger::LV_2, Logger::LOG_WARN);
+                    return ProfileID::peppol_poacc_bis_mlr_3;
+                }
                 $this->_log->log("Found profileID:          $profileID (Falling back to default: '" .
-                    ProfileID::peppol_poacc_bis_mlr_3 . "')", Logger::LV_2, Logger::LOG_WARN);
-                return ProfileID::peppol_poacc_bis_mlr_3;
+                    ProfileID::procurement_BilSim_1_0 . "')", Logger::LV_2, Logger::LOG_WARN);
+                return ProfileID::procurement_BilSim_1_0;
             }
-            $this->_log->log("Found profileID:          $profileID (Falling back to default: '" .
-                ProfileID::procurement_BilSim_1_0 . "')", Logger::LV_2, Logger::LOG_WARN);
-            return ProfileID::procurement_BilSim_1_0;
+
+
+
         }
         $this->_log->log("Found profileID:          $profileID", Logger::LV_2);
         return $profileID;
