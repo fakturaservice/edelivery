@@ -69,7 +69,8 @@ class EDelivery
         $TSReportWrapped    = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId);
         $this->_log->log("Wrapped TSR:\n$TSReportWrapped");
 
-//        $this->_oxalisCli->outbox($TSReportWrapped, NetworkType::PEPPOL_AS4);
+        if(getenv('APP_ENV') == "prod")
+            $this->_oxalisCli->outbox($TSReportWrapped, NetworkType::PEPPOL_AS4);
     }
 
     /**

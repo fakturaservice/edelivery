@@ -23,11 +23,15 @@ use Fakturaservice\Edelivery\{
 
 class OxalisWrapper
 {
-    const DEFAULT_TSR_VERSION_ID            = "TEST1.0";
-    const DEFAULT_EUSR_VERSION_ID           = "TEST1.1";
+    const DEFAULT_TSR_VERSION_ID            = "1.0";
+    const DEFAULT_EUSR_VERSION_ID           = "1.1";
+    const PEPPOL_REPORTING_ENDPOINT_TYPE    = "9925";
+    const PEPPOL_REPORTING_ENDPOINT         = "be0848934496";
     const DEFAULT_UBL_VERSION_ID            = "2.1";
     const TRANSACTION_PARTICIPANT_SENDER    = "Sender";
     const TRANSACTION_PARTICIPANT_RECEIVER  = "Receiver";
+
+
 
     private Logger $_log;
 
@@ -160,8 +164,8 @@ class OxalisWrapper
                 $endpoints[self::TRANSACTION_PARTICIPANT_SENDER]["endpointType"]    = "";
 
                 //Access point name: Official OpenPeppol Reporting AP
-                $endpoints[self::TRANSACTION_PARTICIPANT_RECEIVER]["endpoint"]      = "be0848934496";
-                $endpoints[self::TRANSACTION_PARTICIPANT_RECEIVER]["endpointType"]  = "9925";
+                $endpoints[self::TRANSACTION_PARTICIPANT_RECEIVER]["endpoint"]      = self::PEPPOL_REPORTING_ENDPOINT;
+                $endpoints[self::TRANSACTION_PARTICIPANT_RECEIVER]["endpointType"]  = self::PEPPOL_REPORTING_ENDPOINT_TYPE;
                 break;
             }
         }
