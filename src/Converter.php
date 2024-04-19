@@ -71,7 +71,7 @@ class Converter
         $this->updateFinancialInstitution($dom);
         $this->removeOrderableUnitFactorRate($dom);
         $this->removeEmptyElements($dom);
-        $this->removeZeroTaxableAmount($dom);
+//        $this->removeZeroTaxableAmount($dom);
         $this->removeOrderReference($dom);
 
         // Convert DOMDocument back to XML string
@@ -274,25 +274,24 @@ class Converter
             }
         }
     }
-
     public function removeAdditionalDocumentReferenceAttributes(DOMDocument $dom) {
         $xpath = new DOMXPath($dom);
         $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
         $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
 
         // Check if AdditionalDocumentReference is present
-        $additionalDocumentReference = $xpath->query('//cac:AdditionalDocumentReference');
+        $additionalDocumentReferences = $xpath->query('//cac:AdditionalDocumentReference');
 
-        if ($additionalDocumentReference->length > 0) {
+        foreach ($additionalDocumentReferences as $additionalDocumentReference) {
             // Remove DocumentType from AdditionalDocumentReference
-            $documentType = $xpath->query('cbc:DocumentType', $additionalDocumentReference->item(0));
+            $documentType = $xpath->query('cbc:DocumentType', $additionalDocumentReference);
 
             if ($documentType->length > 0) {
                 $documentType->item(0)->parentNode->removeChild($documentType->item(0));
             }
 
             // Remove unnecessary attributes from Attachment/EmbeddedDocumentBinaryObject
-            $embeddedDocumentBinaryObject = $xpath->query('//cac:AdditionalDocumentReference/cac:Attachment/cbc:EmbeddedDocumentBinaryObject');
+            $embeddedDocumentBinaryObject = $xpath->query('cac:Attachment/cbc:EmbeddedDocumentBinaryObject', $additionalDocumentReference);
 
             if ($embeddedDocumentBinaryObject->length > 0) {
                 $embeddedDocumentBinaryObject = $embeddedDocumentBinaryObject->item(0);

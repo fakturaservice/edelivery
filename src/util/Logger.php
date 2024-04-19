@@ -88,13 +88,14 @@ class Logger implements LoggerInterface
             $info       = str_pad(
                 (substr(basename($backtrace[0]["file"], ".php"), 0, self::STR_LEN_CH_NAME) . ":". $backtrace[0]["line"]),
                 self::STR_LEN_CH_NAME);
+            $info       = "\t[$info]";
         }
         else
             $info = "";
         if(is_array($str))
             $str = var_export($str, true) . "\n";
         else
-            $str = date("d-m-Y H:i:s") . "\t[$this->_channel]\t[$info]\t[$err]\t $str\n";
+            $str = date("d-m-Y H:i:s") . "\t[$this->_channel]$info\t[$err]\t $str\n";
         if($this->_debugLevel >= $level)
             echo $str;
         if($err != self::LOG_OK)

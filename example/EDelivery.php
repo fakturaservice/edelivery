@@ -80,11 +80,11 @@ class EDelivery
     {
         $this->_log->log("Calling sendEUSR:");
         $EUSReport          = $this->_oxalisCli->createEUSR($startDate, $reporterCertCN);
-        $oxalisWrapper      = new OxalisWrapper($EUSReport, new Logger($this->_log->getLogLevel()));
-        $EUSReportWrapped   = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId);
-        $this->_log->log("Wrapped EUSReport:\n$EUSReportWrapped");
-
-        $this->_oxalisCli->outbox($EUSReportWrapped, NetworkType::PEPPOL_AS4);
+//        $oxalisWrapper      = new OxalisWrapper($EUSReport, new Logger($this->_log->getLogLevel()));
+//        $EUSReportWrapped   = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId);
+//        $this->_log->log("Wrapped EUSReport:\n$EUSReportWrapped");
+//
+//        $this->_oxalisCli->outbox($EUSReportWrapped, NetworkType::PEPPOL_AS4);
     }
 
 }

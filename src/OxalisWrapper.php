@@ -78,26 +78,24 @@ class OxalisWrapper
 
         $today                          = new DateTime();
         $documentIdentificationStandard = $this->getDocumentIdentificationStandard();
-        $UBLVersionID                   = $this->getUBLVersionID($usePayloadVersions);
-        $customizationID                = $this->getCustomizationID($glnCh, $usePayloadVersions);
+        $typeVersion                    = $this->getTypeVersion($usePayloadVersions);
         $profileID                      = $this->getProfileID($glnCh, $usePayloadVersions);
         $endpoints                      = $this->getEndpoints();
         $countryC1                      = $this->getCountryC1();
-
-        $documentIdInstanceIdentifier   = "$documentIdentificationStandard::$this->_type##$customizationID::$UBLVersionID";
+        $documentInstanceTypeId         = $this->getDocumentInstanceTypeId($glnCh, "", $usePayloadVersions);
 
         if($useDocTypeNSPrefix)
             $this->setDocTypeNS($documentIdentificationStandard);
 
         $this->setSbdDocumentIdentification(
-            $documentIdentificationStandard,//$documentIdInstanceIdentifier
-            $UBLVersionID,
+            $documentInstanceTypeId,
+            $typeVersion,
             $this->generateUUID(),
             $today);
 
         $this->setSbdBusinessScope(
             $glnCh,
-            $documentIdInstanceIdentifier,
+            $documentInstanceTypeId,
             $profileID,
             $countryC1
         );
@@ -233,6 +231,18 @@ class OxalisWrapper
 
         return $transactionParticipant?$endpoints[$transactionParticipant]:$endpoints;
     }
+
+    /**
+     * @throws Exception
+     */
+    public function getDocumentInstanceTypeId($glnCh, $prefix="", $usePayloadVersions=true): string
+    {
+        $documentIdentificationStandard = $this->getDocumentIdentificationStandard();
+        $typeVersion                    = $this->getTypeVersion($usePayloadVersions);
+        $customizationID                = $this->getCustomizationID($glnCh, $usePayloadVersions);
+
+        return (empty($prefix)?"":"$prefix::") . "$documentIdentificationStandard::$this->_type##$customizationID::$typeVersion";
+    }
     public function getErrorMsg() : string
     {
         return $this->_log->getErrorMsg();
@@ -272,35 +282,32 @@ class OxalisWrapper
     /**
      * @throws Exception
      */
-    private function getUBLVersionID(bool $usePayload=false): string
+    private function getTypeVersion(bool $usePayload=false): string
     {
         $xpath = new DOMXPath($this->_payloadDocument);
         if(in_array($this->_type, [CatalogueType::TransactionStatisticsReport, CatalogueType::EndUserStatisticsReport]))
         {
             $xmlns          = $this->getDocumentIdentificationStandard();
             $parts          = explode(':', $xmlns);
-            $UBLVersionID   = end($parts);
+            $typeVersion    = end($parts);
         }
         else
         {
             $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
             $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
 
-            // Extract values from AccountingSupplierParty
             $UBLVersionIDItm    = $xpath->query('//cbc:UBLVersionID')->item(0);
-            $UBLVersionID   = ($UBLVersionIDItm !== null)?$UBLVersionIDItm->textContent:self::DEFAULT_UBL_VERSION_ID;
+            $typeVersion   = ($UBLVersionIDItm !== null)?$UBLVersionIDItm->textContent:self::DEFAULT_UBL_VERSION_ID;
 
             if(!$usePayload)
             {
-                $this->_log->log("Found UBLVersionID:       $UBLVersionID (Falling back to default: '" .
+                $this->_log->log("Found type version (UBLVersionID):       $typeVersion (Falling back to default: '" .
                     self::DEFAULT_UBL_VERSION_ID . "')", Logger::LV_2, Logger::LOG_WARN);
                 return self::DEFAULT_UBL_VERSION_ID;
             }
-            $this->_log->log("Found UBLVersionID:       $UBLVersionID", Logger::LV_2);
+            $this->_log->log("Found type version (UBLVersionID):       $typeVersion", Logger::LV_2);
         }
-
-
-        return $UBLVersionID;
+        return $typeVersion;
     }
 
     /**
@@ -458,9 +465,9 @@ class OxalisWrapper
         $root->setAttributeNS('http://www.w3.org/2000/xmlns/', $this->_docTypesNsPrefixes[$this->_type], $standard);
     }
     private function setSbdDocumentIdentification(
-        string    $standard,
-        string    $typeVersion,
-        string    $instanceIdentifier,
+        string   $documentInstanceTypeId,
+        string   $typeVersion,
+        string   $instanceIdentifier,
         DateTime $creationDateAndTime)
     {
 
@@ -476,7 +483,7 @@ class OxalisWrapper
 
             // Update child elements with new values
             $documentIdentification->getElementsByTagName('Standard')
-                ->item(0)->nodeValue = $standard;
+                ->item(0)->nodeValue = $documentInstanceTypeId;
             $documentIdentification->getElementsByTagName('TypeVersion')
                 ->item(0)->nodeValue = $typeVersion;
             $documentIdentification->getElementsByTagName('InstanceIdentifier')

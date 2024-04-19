@@ -209,13 +209,26 @@ class OxalisCli
         $this->_log->log("\n$xml", Logger::LV_2);
         return $xml;
     }
+
+    /**
+     * @throws Exception
+     */
     public function createEUSR($startDate, $reporterCertCN): string
     {
         $this->_log->log("Calling createTSR('$startDate')");
         if(!isset($this->_oxalisDB))
             return "";
-        return "";
 
+        $startDate      = new DateTime($startDate);
+        $endDate        = clone ($startDate);
+        $endDate->add(new DateInterval("P1M"));
+
+        $endUsers       = $this->getEUSTEndUsers($startDate, $endDate);
+
+        $this->_log->log("END USER RESULT:");
+        $this->_log->log($endUsers);
+
+        return "";
     }
 
     private function sortingTSRTransactions($transactions): array
@@ -227,7 +240,7 @@ class OxalisCli
             $documentTypeId     = explode("::", $trans["document_type_id"], 2);
             $peppolProcessId    = explode("::", $trans["peppol_process_id"], 2);
 
-            if(($documentTypeId[0] !== NemLookUpCli::BUSINESS_SCOPE_IDENTIFIER) || empty($trans["CN"]))
+            if(($documentTypeId[0] !== NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX) || empty($trans["CN"]))
                 continue;
 
             $keySP_DT_PR_CC = "{$trans["C"]}{$trans["CN"]}{$trans["document_type_id"]}{$trans["peppol_process_id"]}";
@@ -448,6 +461,148 @@ class OxalisCli
         return array_filter($transactions, fn($innerArray) => !empty($innerArray['CN']));//$transactions;
     }
 
+    /**
+     * @throws Exception
+     */
+    private function getEUSTEndUsers($startDate, $endDate): array
+    {
+        if(!isset($this->_oxalisDB))
+            return [];
+
+        $this->_log->log("Start date:\t{$startDate->format("Y-m-01")}");
+        $this->_log->log("End date:\t{$endDate->format("Y-m-01")}");
+
+        $selectQuery    = "SELECT \n";
+        $selectQuery    .= " status, \n";
+        $selectQuery    .= " direction, \n";
+        $selectQuery    .= " sender, \n";
+        $selectQuery    .= " receiver, \n";
+        $selectQuery    .= " document_type_id as DT, \n";
+        $selectQuery    .= " peppol_process_id as PR, \n";
+        $selectQuery    .= " message_content_id, \n";
+        $selectQuery    .= " created_date \n";
+        $selectQuery    .= "FROM \n";
+        $selectQuery    .= " Message \n";
+        $selectQuery    .= "WHERE \n";
+        $selectQuery    .= " status IN ('RECEIVED', 'SENT') \n";
+        $selectQuery    .= " AND CONVERT_TZ(created_date, '+00:00', '+02:00') >= '{$startDate->format("Y-m-01 00:00:00")}' \n";
+        $selectQuery    .= " AND CONVERT_TZ(created_date, '+00:00', '+02:00') < '{$endDate->format("Y-m-01 00:00:00")}'; \n";
+
+        $res            = $this->_oxalisDB->query($selectQuery);
+        $endUsers   = $res->fetch_all(MYSQLI_ASSOC);
+
+        $this->_log->log("Result:");
+        $this->_log->log($endUsers);
+
+        $endUsersXmlArray = [
+            "FullSet" => [
+                'SendingEndUsers' => 0,
+                'ReceivingEndUsers' => 0,
+                'SendingOrReceivingEndUsers' => 0
+            ],
+            "PerDT-PR" => [
+//                "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0::2.1|urn:fdc:peppol.eu:2017:poacc:billing:01:1.0" =>
+//                    [
+//                        'SendingEndUsers' => '4',
+//                        'ReceivingEndUsers' => '2',
+//                        'SendingOrReceivingEndUsers' => '5'
+//                    ],
+//                "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0::2.1|urn:fdc:peppol.eu:2017:poacc:billing:01:1.0" =>
+//                    [
+//                        'SendingEndUsers' => '4',
+//                        'ReceivingEndUsers' => '2',
+//                        'SendingOrReceivingEndUsers' => '5'
+//                    ]
+            ],
+            "PerDT-PR-EUC" => [
+//                "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0::2.1|urn:fdc:peppol.eu:2017:poacc:billing:01:1.0|FI" =>
+//                    [
+//                        'SendingEndUsers' => '4',
+//                        'ReceivingEndUsers' => '2',
+//                        'SendingOrReceivingEndUsers' => '5'
+//                    ],
+//                "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0::2.1|urn:fdc:peppol.eu:2017:poacc:billing:01:1.0|NO" =>
+//                    [
+//                        'SendingEndUsers' => '4',
+//                        'ReceivingEndUsers' => '2',
+//                        'SendingOrReceivingEndUsers' => '5'
+//                    ]
+            ],
+            "PerDT-EUC" => [
+//                "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0::2.1|FI" =>
+//                    [
+//                        'SendingEndUsers' => '4',
+//                        'ReceivingEndUsers' => '2',
+//                        'SendingOrReceivingEndUsers' => '5'
+//                    ],
+//                "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0::2.1|NO" =>
+//                    [
+//                        'SendingEndUsers' => '4',
+//                        'ReceivingEndUsers' => '2',
+//                        'SendingOrReceivingEndUsers' => '5'
+//                    ]
+            ],
+            "Per-EUC" => [
+//                "FI" =>
+//                    [
+//                        'SendingEndUsers' => '4',
+//                        'ReceivingEndUsers' => '2',
+//                        'SendingOrReceivingEndUsers' => '5'
+//                    ],
+//                "NO" =>
+//                    [
+//                        'SendingEndUsers' => '4',
+//                        'ReceivingEndUsers' => '2',
+//                        'SendingOrReceivingEndUsers' => '5'
+//                    ]
+            ],
+            "UniqueEndUsersC1" => [
+//                "iso6523-actorid-upis::9910:12636332" => "FI",
+//                "iso6523-actorid-upis::0184:40342966" => "DK",
+            ]
+        ];
+
+
+        foreach ($endUsers as $endUser)
+        {
+            //Getting all unique end users and there C1 countries
+            if(!isset($endUsersXmlArray["UniqueEndUsersC1"][$endUser["sender"]]))
+            {
+                $endUsersXmlArray["UniqueEndUsersC1"][$endUser["sender"]] = $this->getC1FromContent($endUser["message_content_id"]);
+            }
+            if(!isset($endUsersXmlArray["UniqueEndUsersC1"][$endUser["receiver"]]))
+            {
+                //                    $endUsersXmlArray["UniqueEndUsersC1"][$endUser["sender"]] = null;
+                //Getting C1 from cert
+                $endpoint   = explode("::", $endUser["receiver"]);
+                $htmlCode   = 0;
+                $response   = "";
+                $this->_lookUpCli->lookupEndpointPeppol(
+                    end($endpoint),
+                    $htmlCode,
+                    $endUser["DT"],
+                    $response
+                );
+                $this->_log->log("htmlCode: $htmlCode",
+                    ((($htmlCode > 201) || ($htmlCode < 200)) ? Logger::LV_2 : Logger::LV_3),
+                    (($htmlCode > 201) ? Logger::LOG_WARN : (($htmlCode < 200) ? Logger::LOG_ERR : Logger::LOG_OK))
+                );
+                $x509SubjectName = $this->getSubjectCommonNameFromCertificate($response, $htmlCode);
+                if (!empty($x509SubjectName["C"]))
+                {
+                    $endUsersXmlArray["UniqueEndUsersC1"][$endUser["receiver"]] = $x509SubjectName["C"];
+                }
+                else {
+                    $endUsersXmlArray["UniqueEndUsersC1"][$endUser["receiver"]] = null;
+                    $this->_log->log("Endpoint is not registered as PEPPOL: " . end($endpoint), Logger::LV_2, Logger::LOG_WARN);
+                }
+
+
+            }
+        }
+
+        return $endUsersXmlArray;
+    }
     /**
      * @throws Exception
      */
@@ -704,16 +859,36 @@ class OxalisCli
         @$this->_oxalisDB = new mysqli($oxalisDBHst, $oxalisDBUsr, $oxalisDBPwd, $oxalisDB);
         if ($this->_oxalisDB->connect_errno)
         {
-            $this->_log->log("Connection to OXALIS DB failed", Logger::LV_1, Logger::LOG_WARN);
+            $this->_log->log("Connection to OXALIS DB failed: '$oxalisDBUsr'", Logger::LV_1, Logger::LOG_WARN);
             $this->_log->log($this->_oxalisDB->connect_error, Logger::LV_1, Logger::LOG_ERR);
             $this->_oxalisDB = null;
             return false;
         } else {
-            $this->_log->log("Connection to OXALIS DB succeeded");
+            $this->_log->log("Connection to OXALIS DB succeeded: '$oxalisDBUsr'");
             return true;
         }
     }
 
+    private function getC1FromContent($messageContentId)
+    {
+        if(!isset($this->_oxalisDB))
+            return [];
+
+        $selectQuery    = "SELECT \n";
+        $selectQuery    .= " data AS xml\n";
+        $selectQuery    .= "FROM \n";
+        $selectQuery    .= " Message_Content \n";
+        $selectQuery    .= "WHERE \n";
+        $selectQuery    .= " id = $messageContentId; \n";
+
+        $res    = $this->_oxalisDB->query($selectQuery);
+        $data   = $res->fetch_all(MYSQLI_ASSOC);
+
+        preg_match('/<Scope><Type>COUNTRY_C1<\/Type><InstanceIdentifier>(.*?)<\/InstanceIdentifier>/', $data["xml"], $matches);
+        preg_match_all('/<Scope>\s*<Type>COUNTRY_C1<\/Type>\s*<InstanceIdentifier>(.*?)<\/InstanceIdentifier>\s*<\/Scope>/', $data["xml"], $matches);
+
+        return empty($matches[1])?"DK":$matches[1];
+    }
 
 
 }

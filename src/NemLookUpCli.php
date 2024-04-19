@@ -17,7 +17,7 @@ class NemLookUpCli
     const NEM_API_URL                                   = "https://api.nemhandel.dk/nemhandel-api/";
     const PEPPOL_SML_URL                                = "edelivery.tech.ec.europa.eu/";
     const SCHEME_ID                                     = "iso6523-actorid-upis";
-    const BUSINESS_SCOPE_IDENTIFIER                     = "busdox-docid-qns";
+    const BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX       = "busdox-docid-qns";
     const BUSINESS_SCOPE_INSTANCE_IDENTIFIER_INV        = "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0::2.1";
     const BUSINESS_SCOPE_INSTANCE_IDENTIFIER_CRE        = "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2::CreditNote##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0::2.1";
     const BUSINESS_SCOPE_INSTANCE_IDENTIFIER_INV_RES    = "urn:oasis:names:specification:ubl:schema:xsd:ApplicationResponse-2::ApplicationResponse##urn:fdc:peppol.eu:poacc:trns:invoice_response:3::2.1";
