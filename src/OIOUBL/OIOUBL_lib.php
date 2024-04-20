@@ -37,9 +37,9 @@ require_once __DIR__ . "/OPStatusReason.php";
  */
 class OIOUBL_lib extends OIOUBL_base
 {
-    protected function __construct(string $catalogueType, $UBLVersion, $inputXml=null)
+    protected function __construct(string $catalogueType, $UBLVersion, $resourcePath, $inputXml=null)
     {
-        parent::__construct($catalogueType, $UBLVersion, $inputXml);
+        parent::__construct($catalogueType, $UBLVersion, $resourcePath, $inputXml);
     }
     
     /**

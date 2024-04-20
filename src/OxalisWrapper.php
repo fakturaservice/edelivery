@@ -399,7 +399,6 @@ class OxalisWrapper
     }
 
     /**
-     * @throws ORException
      * @throws Exception
      */
     private function getCountryC1(): string

@@ -25,6 +25,8 @@
       "ext-curl": "*",
       "ext-openssl": "*",
       "ext-simplexml": "*",
-      "ext-mysqli": "*"
+      "ext-mysqli": "*",
+      "ext-libxml": "*",
+      "ext-xsl": "*"
     }
 }

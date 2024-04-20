@@ -41,9 +41,6 @@ abstract class OIOUBL_base
     const UBL_VERSION_2_1               = "2.1";
     const UBL_PEPPOL_VERSION_EN16931    = "EN16931";
 
-    const RESOURCE_PATH_OIOUBL = __DIR__ . "/../../../resources/OIOUBL";
-    const RESOURCE_PATH_PEPPOL = __DIR__ . "/../../../resources/PEPPOL";
-
     protected string $_resourcesPath;
     protected bool $_isOIOUBL;
     protected ?string $_UBLVersion;
@@ -60,12 +57,12 @@ abstract class OIOUBL_base
     /**
      * @throws DOMException
      */
-    protected function __construct(string $catalogueType, $UBLVersion, $inputXml=null)
+    protected function __construct(string $catalogueType, $UBLVersion, $resourcePath, $inputXml=null)
     {
         $this->_catalogueType   = $catalogueType;
         $this->_UBLVersion      = $UBLVersion;
         $this->_isOIOUBL        = (($UBLVersion == self::UBL_VERSION_2_0) || ($UBLVersion == self::UBL_VERSION_2_1));
-        $this->_resourcesPath   = ($this->_isOIOUBL)?self::RESOURCE_PATH_OIOUBL:self::RESOURCE_PATH_PEPPOL;
+        $this->_resourcesPath   = "$resourcePath/" . ($this->_isOIOUBL)?"OIOUBL":"PEPPOL";
 
         if(isset($inputXml))
         {

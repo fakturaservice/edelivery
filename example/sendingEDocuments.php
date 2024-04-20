@@ -25,14 +25,14 @@ try
         $configuration[$environment]["peppolAS4DBName"]
     );
 
-//    $eDelivery->sendTSR(
-//        $configuration[$environment]["peppolReporterEndpointId"],
-//        $configuration[$environment]["peppolReporterCertCN"],
-//        "2024-04-01");
-    $eDelivery->sendEUSR(
+    $eDelivery->sendTSR(
         $configuration[$environment]["peppolReporterEndpointId"],
         $configuration[$environment]["peppolReporterCertCN"],
-        "2024-03-01");
+        "2024-04-01");
+//    $eDelivery->sendEUSR(
+//        $configuration[$environment]["peppolReporterEndpointId"],
+//        $configuration[$environment]["peppolReporterCertCN"],
+//        "2024-03-01");
 
 //    $eDelivery->distributeEDocuments();
 //    $eDelivery->send(__DIR__ . "/testInvoicePeppolDoc.xml");
