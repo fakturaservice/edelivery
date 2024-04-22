@@ -42,7 +42,7 @@ class OxalisWrapper
         CatalogueType::ApplicationResponse  => "xmlns:app"
     ];
 
-    private string $_sbdTemplatePath = __DIR__ . "/SBDTemplate.xml";
+    private string $_sbdTemplatePath = __DIR__ . "/resources/SBDTemplate.xml";
     private DOMDocument $_sbdTemplateDocument;
     private DOMDocument $_payloadDocument;
     private string $_type;

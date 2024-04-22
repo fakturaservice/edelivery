@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EndUserStatisticsReport xmlns="urn:fdc:peppol:end-user-statistics-report:1.1">
+    <CustomizationID>urn:fdc:peppol.eu:edec:trns:end-user-statistics-report:1.1</CustomizationID>
+    <ProfileID>urn:fdc:peppol.eu:edec:bis:reporting:1.0</ProfileID>
+    <Header>
+        <ReportPeriod>
+            <StartDate>%s</StartDate>
+            <EndDate>%s</EndDate>
+        </ReportPeriod>
+        <ReporterID schemeID="CertSubjectCN">%s</ReporterID>
+    </Header>
+    <FullSet>
+        <SendingEndUsers>0</SendingEndUsers>
+        <ReceivingEndUsers>0</ReceivingEndUsers>
+        <SendingOrReceivingEndUsers>0</SendingOrReceivingEndUsers>
+    </FullSet>
+    <!-- All Subsets go here -->
+</EndUserStatisticsReport>

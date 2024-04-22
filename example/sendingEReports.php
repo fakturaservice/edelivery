@@ -3,7 +3,7 @@ namespace example;
 
 use Exception;
 
-require_once __DIR__ . '/EDelivery.php';
+require_once __DIR__ . '/EReports.php';
 
 //putenv('APP_ENV=prod');
 putenv('APP_ENV=dev');
@@ -14,8 +14,8 @@ try
     $configuration  = parse_ini_file(__DIR__ . "/config.ini", true);
     $debugLevel     = $configuration[$environment]["debugLevel"];
 
-    $eDelivery  = new EDelivery($debugLevel);
-    $eDelivery->setupOxalisCli(
+    $eReports  = new EReports($debugLevel);
+    $eReports->setupOxalisCli(
         $configuration[$environment]["peppolAS4Url"],
         $configuration[$environment]["peppolAS4Usr"],
         $configuration[$environment]["peppolAS4PsW"],
@@ -25,17 +25,16 @@ try
         $configuration[$environment]["peppolAS4DBName"]
     );
 
-    $eDelivery->sendTSR(
+    $eReports->sendTSR(
         $configuration[$environment]["peppolReporterEndpointId"],
         $configuration[$environment]["peppolReporterCertCN"],
-        "2024-04-01");
-//    $eDelivery->sendEUSR(
-//        $configuration[$environment]["peppolReporterEndpointId"],
-//        $configuration[$environment]["peppolReporterCertCN"],
-//        "2024-03-01");
+        "2024-03-01");
 
-//    $eDelivery->distributeEDocuments();
-//    $eDelivery->send(__DIR__ . "/testInvoicePeppolDoc.xml");
+    $eReports->sendEUSR(
+        $configuration[$environment]["peppolReporterEndpointId"],
+        $configuration[$environment]["peppolReporterCertCN"],
+        "2024-03-01");
+
 
 } catch (Exception $e)
 {

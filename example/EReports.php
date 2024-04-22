@@ -7,19 +7,17 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Exception;
 use Fakturaservice\Edelivery\{
     OIOUBL\NetworkType,
-    OxalisCli,
-    NemLookUpCli,
+    OxalisReport,
     OxalisWrapper,
     util\Logger
 };
 
-class EDelivery
+class EReports
 {
-    private NemLookUpCli $_nemLookUpCli;
     private Logger $_log;
     private string $_className;
     private int $_debugLevel;
-    private ?OxalisCli $_oxalisCli;
+    private ?OxalisReport $_oxalisReport;
 
 
     /**
@@ -31,8 +29,7 @@ class EDelivery
         $this->_debugLevel      = $debugLevel;
         $this->_log             = new Logger($this->_debugLevel);
         $this->_log->setChannel($this->_className);
-        $this->_nemLookUpCli    = new NemLookUpCli(new Logger($this->_debugLevel));
-        $this->_oxalisCli       = null;
+        $this->_oxalisReport       = null;
     }
 
     /**
@@ -43,13 +40,13 @@ class EDelivery
         string $dbUrl,  string $dbUserName, string $dbPassWord, string $db
     )
     {
-        $this->_oxalisCli   = new OxalisCli(
+        $this->_oxalisReport   = new OxalisReport(
             $apiUrl,
             $apiUserName,
             $apiPassWord,
             new Logger($this->_debugLevel)
         );
-        $this->_oxalisCli->connectOxalisDB(
+        $this->_oxalisReport->connectOxalisDB(
             $dbUrl,
             $dbUserName,
             $dbPassWord,
@@ -64,13 +61,13 @@ class EDelivery
     public function sendTSR($reporterEndpointId, $reporterCertCN, $startDate)
     {
         $this->_log->log("Calling sendTSR:");
-        $TSReport           = $this->_oxalisCli->createTSR($startDate, $reporterCertCN);
+        $TSReport           = $this->_oxalisReport->createTSR($startDate, $reporterCertCN);
         $oxalisWrapper      = new OxalisWrapper($TSReport, new Logger($this->_log->getLogLevel()));
         $TSReportWrapped    = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId);
-        $this->_log->log("Wrapped TSR:\n$TSReportWrapped");
+        $this->_log->log("Wrapped TSReport:\n$TSReportWrapped", Logger::LV_1);
 
         if(getenv('APP_ENV') == "prod")
-            $this->_oxalisCli->outbox($TSReportWrapped, NetworkType::PEPPOL_AS4);
+            $this->_oxalisReport->outbox($TSReportWrapped, NetworkType::PEPPOL_AS4);
     }
 
     /**
@@ -79,12 +76,13 @@ class EDelivery
     public function sendEUSR($reporterEndpointId, $reporterCertCN, $startDate)
     {
         $this->_log->log("Calling sendEUSR:");
-        $EUSReport          = $this->_oxalisCli->createEUSR($startDate, $reporterCertCN);
-//        $oxalisWrapper      = new OxalisWrapper($EUSReport, new Logger($this->_log->getLogLevel()));
-//        $EUSReportWrapped   = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId);
-//        $this->_log->log("Wrapped EUSReport:\n$EUSReportWrapped");
-//
-//        $this->_oxalisCli->outbox($EUSReportWrapped, NetworkType::PEPPOL_AS4);
+        $EUSReport          = $this->_oxalisReport->createEUSR($startDate, $reporterCertCN);
+        $oxalisWrapper      = new OxalisWrapper($EUSReport, new Logger($this->_log->getLogLevel()));
+        $EUSReportWrapped   = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId);
+        $this->_log->log("Wrapped EUSReport:\n$EUSReportWrapped", Logger::LV_1);
+
+        if(getenv('APP_ENV') == "prod")
+            $this->_oxalisReport->outbox($EUSReportWrapped, NetworkType::PEPPOL_AS4);
     }
 
 }

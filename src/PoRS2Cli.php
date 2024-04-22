@@ -14,7 +14,7 @@ use Fakturaservice\Edelivery\{
 
 class PoRS2Cli
 {
-    const PARTICIPANT_ADD_TEMPL_PATH    = __DIR__ . "/UpdateParticipantTemplate.xml";
+    const PARTICIPANT_ADD_TEMPL_PATH    = __DIR__ . "/resources/UpdateParticipantTemplate.xml";
     const PORS_URL                      = "https://registrationservice.nemhandel.dk/nemhandel-pors/";
     const GRP_ID_NemHandel_RASP         = 88110;//109399;
     const GRP_ID_NemHandel_AS4          = 109391;
