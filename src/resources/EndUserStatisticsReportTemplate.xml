@@ -14,5 +14,4 @@
         <ReceivingEndUsers>0</ReceivingEndUsers>
         <SendingOrReceivingEndUsers>0</SendingOrReceivingEndUsers>
     </FullSet>
-    <!-- All Subsets go here -->
 </EndUserStatisticsReport>
