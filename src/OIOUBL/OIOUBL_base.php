@@ -62,7 +62,7 @@ abstract class OIOUBL_base
         $this->_catalogueType   = $catalogueType;
         $this->_UBLVersion      = $UBLVersion;
         $this->_isOIOUBL        = (($UBLVersion == self::UBL_VERSION_2_0) || ($UBLVersion == self::UBL_VERSION_2_1));
-        $this->_resourcesPath   = "$resourcePath/" . ($this->_isOIOUBL)?"OIOUBL":"PEPPOL";
+        $this->_resourcesPath   = "$resourcePath/" . (($this->_isOIOUBL)?"OIOUBL":"PEPPOL");
 
         if(isset($inputXml))
         {
