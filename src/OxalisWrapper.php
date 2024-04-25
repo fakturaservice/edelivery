@@ -36,10 +36,12 @@ class OxalisWrapper
     private Logger $_log;
 
     private array $_docTypesNsPrefixes = [
-        CatalogueType::Invoice              => "xmlns:inv",
-        CatalogueType::CreditNote           => "xmlns:cre",
-        CatalogueType::Reminder             => "xmlns:rem",
-        CatalogueType::ApplicationResponse  => "xmlns:app"
+        CatalogueType::Invoice                      => "xmlns:inv",
+        CatalogueType::CreditNote                   => "xmlns:cre",
+        CatalogueType::Reminder                     => "xmlns:rem",
+        CatalogueType::ApplicationResponse          => "xmlns:app",
+        CatalogueType::EndUserStatisticsReport      => "xmlns:eusr",
+        CatalogueType::TransactionStatisticsReport  => "xmlns:tsr",
     ];
 
     private string $_sbdTemplatePath = __DIR__ . "/resources/SBDTemplate.xml";

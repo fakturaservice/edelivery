@@ -12,8 +12,11 @@ class Logger implements LoggerInterface
     const LOG_WARN      = "\033[33mWARN\033[0m";
     const LOG_ERR       = "\033[31mERROR\033[0m";
 
+    /** @var int Most verbose */
     const LV_1  = 1;
+    /** @var int  Verbose */
     const LV_2  = 2;
+    /** @var int Most silent */
     const LV_3  = 3;
 
     const STR_LEN_CH_NAME   = 15;

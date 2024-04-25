@@ -79,10 +79,8 @@ class OxalisReport
 
         $transactions                   = $this->getTRSTransactions($startDate, $endDate);
         $sortedTransactions             = $this->sortingTSRTransactions($transactions);
+        return $this->generateTSRXml($sortedTransactions, $startDate, $endDate, $reporterCertCN);
 
-        $xml = $this->generateTSRXml($sortedTransactions, $startDate, $endDate, $reporterCertCN);
-        $this->_log->log("\n$xml", Logger::LV_2);
-        return $xml;
     }
 
     /**
@@ -99,6 +97,9 @@ class OxalisReport
         $endDate->add(new DateInterval("P1M"));
 
         $endUsers   = $this->getEUSTEndUsers($startDate, $endDate);
+        $this->_log->log("END USER XML ARRAY:", Logger::LV_3);
+        $this->_log->log($endUsers, Logger::LV_3);
+
         $xml        = $this->generateEUSTXml($endUsers, $startDate, $endDate, $reporterCertCN);
 
         $this->_log->log("END USER XML RESULT:\n$xml", Logger::LV_2);
@@ -268,52 +269,23 @@ class OxalisReport
     }
 
 
-    private function generateEUSTXml(array $endUsers, DateTime $startDate, DateTime $endDate, string $reporterCertCN)
-    {
-        // Create a new DOMDocument
-        $doc = new DOMDocument();
-        $doc->preserveWhiteSpace = false; // Set preserveWhiteSpace to false
-        $doc->formatOutput = true; // Set formatOutput to true for proper indentation
+    /**
+     * @throws Exception
+     */
+    private function generateEUSTXml(array $endUsers, DateTime $startDate, DateTime $endDate, string $reporterCertCN) {
 
-        $template   = file_get_contents(__DIR__ . "/resources/EndUserStatisticsReportTemplate.xml");
-        $xmlStr     = sprintf(
+        $template = file_get_contents(__DIR__ . "/resources/EndUserStatisticsReportTemplate.xml");
+        $insertionPoint = '</Header>';
+
+        $template = sprintf(
             $template,
             $startDate->format("Y-m-d"),
             $endDate->sub(new DateInterval("P1D"))->format("Y-m-d"),
-            $reporterCertCN);
+            $reporterCertCN
+        );
 
-        // Load the template XML
-        $doc->loadXML($xmlStr);
-
-        foreach ($endUsers as $key => $endUserElement)
-        {
-            $subSetDoc = new DOMDocument();
-            $subSetDoc->preserveWhiteSpace = false;
-            $subSetDoc->formatOutput = true;
-            $subSetDoc->loadXML($endUserElement);
-
-            if($key == 0)
-            {
-                // Replace the element <FullSet> in $doc with $subSetDoc
-                $fullSet = $subSetDoc->getElementsByTagName('FullSet')->item(0);
-                $fullSet = $doc->importNode($fullSet, true);
-
-                $oldFullSet = $doc->getElementsByTagName('FullSet')->item(0);
-                $oldFullSet->parentNode->replaceChild($fullSet, $oldFullSet);
-            }
-            else
-            {
-                // Add the element in $subSetDoc to $doc after <FullSet>
-                $subset = $subSetDoc->getElementsByTagName('Subset')->item(0);
-                $subset = $doc->importNode($subset, true);
-
-                $oldFullSet = $doc->getElementsByTagName('FullSet')->item(0);
-                $oldFullSet->parentNode->insertBefore($subset, $oldFullSet->nextSibling);
-            }
-        }
-
-        return $doc->saveXML();
-
+        $endUsers = implode("", $endUsers);
+        return str_replace($insertionPoint, $insertionPoint . $endUsers, $template);
     }
 
     /**

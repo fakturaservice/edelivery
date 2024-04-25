@@ -63,7 +63,7 @@ class EReports
         $this->_log->log("Calling sendTSR:");
         $TSReport           = $this->_oxalisReport->createTSR($startDate, $reporterCertCN);
         $oxalisWrapper      = new OxalisWrapper($TSReport, new Logger($this->_log->getLogLevel()));
-        $TSReportWrapped    = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId);
+        $TSReportWrapped    = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId, true);
         $this->_log->log("Wrapped TSReport:\n$TSReportWrapped", Logger::LV_1);
 
         if(getenv('APP_ENV') == "prod")
@@ -78,7 +78,7 @@ class EReports
         $this->_log->log("Calling sendEUSR:");
         $EUSReport          = $this->_oxalisReport->createEUSR($startDate, $reporterCertCN);
         $oxalisWrapper      = new OxalisWrapper($EUSReport, new Logger($this->_log->getLogLevel()));
-        $EUSReportWrapped   = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId);
+        $EUSReportWrapped   = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId, true);
         $this->_log->log("Wrapped EUSReport:\n$EUSReportWrapped", Logger::LV_1);
 
         if(getenv('APP_ENV') == "prod")
