@@ -28,12 +28,12 @@ try
     $eReports->sendTSR(
         $configuration[$environment]["peppolReporterEndpointId"],
         $configuration[$environment]["peppolReporterCertCN"],
-        "2024-03-01");
+        "2024-04-01");
 
     $eReports->sendEUSR(
         $configuration[$environment]["peppolReporterEndpointId"],
         $configuration[$environment]["peppolReporterCertCN"],
-        "2024-03-01");
+        "2024-04-01");
 
 
 } catch (Exception $e)
