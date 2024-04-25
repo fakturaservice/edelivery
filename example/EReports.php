@@ -64,6 +64,19 @@ class EReports
         $TSReport           = $this->_oxalisReport->createTSR($startDate, $reporterCertCN);
         $oxalisWrapper      = new OxalisWrapper($TSReport, new Logger($this->_log->getLogLevel()));
         $TSReportWrapped    = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId, true);
+
+        $TSReportWrapped   = str_replace('<StandardBusinessDocument xmlns="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader" xmlns:tsr="urn:fdc:peppol:transaction-statistics-report:1.0">',
+            '<StandardBusinessDocument xmlns="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader" >',
+            $TSReportWrapped);
+
+        $TSReportWrapped   = str_replace('<tsr:TransactionStatisticsReport>',
+            '<TransactionStatisticsReport xmlns="urn:fdc:peppol:transaction-statistics-report:1.0" xmlns:tsr="urn:fdc:peppol:transaction-statistics-report:1.0">',
+            $TSReportWrapped);
+
+        $TSReportWrapped   = str_replace('</tsr:TransactionStatisticsReport>',
+            '</TransactionStatisticsReport>',
+            $TSReportWrapped);
+
         $this->_log->log("Wrapped TSReport:\n$TSReportWrapped", Logger::LV_1);
 
         if(getenv('APP_ENV') == "prod")
@@ -79,6 +92,19 @@ class EReports
         $EUSReport          = $this->_oxalisReport->createEUSR($startDate, $reporterCertCN);
         $oxalisWrapper      = new OxalisWrapper($EUSReport, new Logger($this->_log->getLogLevel()));
         $EUSReportWrapped   = $oxalisWrapper->wrapSBD(NetworkType::PEPPOL_AS4, $reporterEndpointId, true);
+
+        $EUSReportWrapped   = str_replace('<StandardBusinessDocument xmlns="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader" xmlns:eusr="urn:fdc:peppol:end-user-statistics-report:1.1">',
+            '<StandardBusinessDocument xmlns="http://www.unece.org/cefact/namespaces/StandardBusinessDocumentHeader" >',
+            $EUSReportWrapped);
+
+        $EUSReportWrapped   = str_replace('<eusr:EndUserStatisticsReport>',
+            '<EndUserStatisticsReport xmlns="urn:fdc:peppol:end-user-statistics-report:1.1" xmlns:eusr="urn:fdc:peppol:end-user-statistics-report:1.1">',
+            $EUSReportWrapped);
+
+        $EUSReportWrapped   = str_replace('</eusr:EndUserStatisticsReport>',
+            '</EndUserStatisticsReport>',
+            $EUSReportWrapped);
+
         $this->_log->log("Wrapped EUSReport:\n$EUSReportWrapped", Logger::LV_1);
 
         if(getenv('APP_ENV') == "prod")

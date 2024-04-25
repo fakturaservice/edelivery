@@ -484,7 +484,11 @@ class OxalisWrapper
 
             // Update child elements with new values
             $documentIdentification->getElementsByTagName('Standard')
-                ->item(0)->nodeValue = $documentInstanceTypeId;
+                ->item(0)->nodeValue = (in_array(
+                    $this->_type, [
+                        CatalogueType::TransactionStatisticsReport,
+                        CatalogueType::EndUserStatisticsReport
+                    ]))?$this->getDocumentIdentificationStandard():$documentInstanceTypeId;
             $documentIdentification->getElementsByTagName('TypeVersion')
                 ->item(0)->nodeValue = $typeVersion;
             $documentIdentification->getElementsByTagName('InstanceIdentifier')
