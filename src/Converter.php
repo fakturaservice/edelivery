@@ -769,27 +769,6 @@ class Converter
     /**
      * @throws DOMException
      */
-//    private function overwritePaymentTerms(DOMDocument $dom)
-//    {
-//        $xpath = new DOMXPath($dom);
-//
-//        // Find cac:PaymentTerms
-//        $paymentTerms = $xpath->query('//cac:PaymentTerms');
-//
-//        // Loop through each PaymentTerms
-//        foreach ($paymentTerms as $terms) {
-//            // Remove all existing child elements
-//            while ($terms->hasChildNodes()) {
-//                $terms->removeChild($terms->firstChild);
-//            }
-//
-//            // Create and append the new cbc:Note element
-//            $noteElement = $dom->createElement('cbc:Note', 'Net');
-//            $terms->appendChild($noteElement);
-//        }
-//    }
-
-
     private function overwritePaymentTerms(DOMDocument $dom)
     {
         $xpath = new DOMXPath($dom);
