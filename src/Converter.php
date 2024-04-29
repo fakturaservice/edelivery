@@ -153,7 +153,7 @@ class Converter
         foreach ($copyIndicatorNodes as $copyIndicatorNode) {
             // Remove each CopyIndicator element
             $copyIndicatorNode->parentNode->removeChild($copyIndicatorNode);
-            $this->_log->log("Removing copyIndicator: " . $copyIndicatorNode->nodeValue);
+            $this->_log->log("Removing copyIndicator: " . $copyIndicatorNode->nodeName);
         }
     }
 
@@ -304,7 +304,7 @@ class Converter
 
             if ($documentType->length > 0) {
                 $documentType->item(0)->parentNode->removeChild($documentType->item(0));
-                $this->_log->log("Removing additionalDocumentReference: " . $additionalDocumentReference->nodeValue);
+                $this->_log->log("Removing additionalDocumentReference: " . $additionalDocumentReference->nodeName);
             }
 
             // Remove unnecessary attributes from Attachment/EmbeddedDocumentBinaryObject
@@ -318,7 +318,7 @@ class Converter
                     $embeddedDocumentBinaryObject->setAttribute('filename', 'attachment.pdf');
                     $embeddedDocumentBinaryObject->setAttribute('mimeCode', 'application/pdf');
 
-                    $this->_log->log("Setting attributes ('filename' and 'mimeCode') on: " . $embeddedDocumentBinaryObject->nodeValue);
+                    $this->_log->log("Setting attributes ('filename' and 'mimeCode') on: " . $embeddedDocumentBinaryObject->nodeName);
 
                     // Remove other attributes
                     $attributesToRemove = ['encodingCode', 'uri', 'description', 'characterSetCode'];
