@@ -27,6 +27,7 @@
       "ext-simplexml": "*",
       "ext-mysqli": "*",
       "ext-libxml": "*",
-      "ext-xsl": "*"
+      "ext-xsl": "*",
+      "ext-readline": "*"
     }
 }

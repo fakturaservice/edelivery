@@ -14,13 +14,19 @@ use Fakturaservice\Edelivery\OIOUBL\{
     ProfileID,
     UNCL1001
 };
+use Fakturaservice\Edelivery\util\LoggerInterface;
 
 
 class Converter
 {
-    public function __construct()
-    {
+    private string $_className;
+    private LoggerInterface $_log;
 
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->_className           = basename(str_replace('\\', '/', get_called_class()));
+        $this->_log                 = $logger;
+        $this->_log->setChannel($this->_className);
     }
 
     /**
@@ -112,6 +118,7 @@ class Converter
         $ublVersionID = $dom->getElementsByTagName('UBLVersionID')->item(0);
         if ($ublVersionID instanceof DOMElement)
         {
+            $this->_log->log("Removing UBL version ID: " . $ublVersionID->nodeValue);
             $ublVersionID->parentNode->removeChild($ublVersionID);
         }
     }
@@ -120,6 +127,7 @@ class Converter
     {
         $customizationID = $dom->getElementsByTagName('CustomizationID')->item(0);
         $customizationID->nodeValue = CustomizationID::peppol_poacc_billing_3_0;//'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0';
+        $this->_log->log("Converting CustomizationID to: " . $customizationID->nodeValue);
     }
 
     private function convertProfileID(DOMDocument $dom)
@@ -130,6 +138,7 @@ class Converter
             $profileID->nodeValue = ProfileID::peppol_poacc_billing_01_1_0;// 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0';
             $profileID->removeAttribute('schemeAgencyID');
             $profileID->removeAttribute('schemeID');
+            $this->_log->log("Converting profileID to: " . $profileID->nodeValue);
         }
     }
 
@@ -143,6 +152,7 @@ class Converter
         foreach ($copyIndicatorNodes as $copyIndicatorNode) {
             // Remove each CopyIndicator element
             $copyIndicatorNode->parentNode->removeChild($copyIndicatorNode);
+            $this->_log->log("Removing copyIndicator: " . $copyIndicatorNode->nodeValue);
         }
     }
 
@@ -152,6 +162,7 @@ class Converter
         if ($uuid instanceof DOMElement)
         {
             $uuid->parentNode->removeChild($uuid);
+            $this->_log->log("Removing UUID: " . $uuid->nodeValue);
         }
     }
     /**
@@ -168,6 +179,7 @@ class Converter
             // Insert the new DueDate after the IssueDate
             $issueDate = $dom->getElementsByTagName('IssueDate')->item(0);
             $issueDate->parentNode->insertBefore($newDueDate, $issueDate->nextSibling);
+            $this->_log->log("Moving Payment DueDate before IssueDate: " . $issueDate->nodeValue);
 
             // Remove the original PaymentDueDate
             $paymentDueDate->parentNode->removeChild($paymentDueDate);
@@ -207,6 +219,7 @@ class Converter
 
             // Set the value to 380 if it's not already
             $invoiceTypeElement->nodeValue = UNCL1001::_380;
+            $this->_log->log("Converting invoiceTypeCode to: " . $invoiceTypeElement->nodeValue);
 
             // Remove attributes
             if ($invoiceTypeElement instanceof DOMElement) {
@@ -242,6 +255,7 @@ class Converter
 
             // Set the value to 380 if it's not already
             $creditNoteTypeElement->nodeValue = UNCL1001::_381;
+            $this->_log->log("Converting creditNoteTypeCode to: " . $creditNoteTypeElement->nodeValue);
 
             // Remove attributes
             if ($creditNoteTypeElement instanceof DOMElement) {
@@ -271,6 +285,7 @@ class Converter
             $documentCurrencyCode = $xpath->query('//cbc:DocumentCurrencyCode')->item(0);
             if ($documentCurrencyCode instanceof DOMElement) {
                 $documentCurrencyCode->parentNode->insertBefore($orderReference, $documentCurrencyCode->nextSibling);
+                $this->_log->log("Inserting orderReference before DocumentCurrencyCode: " . $orderReference->nodeValue);
             }
         }
     }
@@ -288,6 +303,7 @@ class Converter
 
             if ($documentType->length > 0) {
                 $documentType->item(0)->parentNode->removeChild($documentType->item(0));
+                $this->_log->log("Removing additionalDocumentReference: " . $additionalDocumentReference->nodeValue);
             }
 
             // Remove unnecessary attributes from Attachment/EmbeddedDocumentBinaryObject
@@ -301,11 +317,14 @@ class Converter
                     $embeddedDocumentBinaryObject->setAttribute('filename', 'attachment.pdf');
                     $embeddedDocumentBinaryObject->setAttribute('mimeCode', 'application/pdf');
 
+                    $this->_log->log("Setting attributes ('filename' and 'mimeCode') on: " . $embeddedDocumentBinaryObject->nodeValue);
+
                     // Remove other attributes
                     $attributesToRemove = ['encodingCode', 'uri', 'description', 'characterSetCode'];
                     foreach ($attributesToRemove as $attribute) {
                         if ($embeddedDocumentBinaryObject->hasAttribute($attribute)) {
                             $embeddedDocumentBinaryObject->removeAttribute($attribute);
+                            $this->_log->log("Removing attribute: " . $attribute);
                         }
                     }
                 }
@@ -334,6 +353,7 @@ class Converter
                 // Create a text node with the value and append it to the element
                 $textNode = $dom->createTextNode($partyNameNode->nodeValue);
                 $registrationNameElement->appendChild($textNode);
+                $this->_log->log("Adding to registrationName: " . $textNode->nodeValue);
 
                 // Insert the created element as the first child of cac:PartyLegalEntity
                 $partyLegalEntityNode = $xpath->query('//cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity')->item(0);
@@ -617,6 +637,8 @@ class Converter
             $accountingCustomerParty = $xpath->query('//cac:AccountingCustomerParty/cac:Party')->item(0);
 
             if ($accountingCustomerParty instanceof DOMElement) {
+
+//                $accountingCustomerParty->nodeValue = urlencode($accountingCustomerParty->nodeValue);
                 // Create new PartyLegalEntity block
                 $newPartyLegalEntity = $dom->createElement('cac:PartyLegalEntity');
                 $newRegistrationName = $dom->createElement('cbc:RegistrationName', $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyName/cbc:Name)', $accountingCustomerParty));
