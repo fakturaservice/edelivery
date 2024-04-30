@@ -56,7 +56,8 @@ class Converter
         $this->updateOrderReference($dom);
         $this->removeLanguageID($dom);
         $this->removeEmptyBuildingNumbers($dom);
-        $this->adjustPriceAndQuantity($dom);
+        $this->adjustPriceAndQuantityOnInvoice($dom);
+        $this->adjustPriceAndQuantityOnCreditNote($dom);
 //        $this->removePartyIdentificationSchemeID($dom);
         $this->removePartyTaxSchemeCompanyIDScheme($dom);
         $this->updateTaxSchemeID($dom);
@@ -769,39 +770,73 @@ class Converter
     /**
      * @throws DOMException
      */
+//    private function overwritePaymentTerms(DOMDocument $dom)
+//    {
+//        $xpath = new DOMXPath($dom);
+//
+//        // Find all cac:PaymentTerms elements
+//        $paymentTerms = $xpath->query('//cac:PaymentTerms');
+//
+//        // Remove all but the first PaymentTerms element
+//        for ($i = 1; $i < $paymentTerms->length; $i++) {
+//            $paymentTerm = $paymentTerms->item($i);
+//            $paymentTerm->parentNode->removeChild($paymentTerm);
+//        }
+//
+//        // If there's no existing PaymentTerms element, create one
+//        if ($paymentTerms->length === 0) {
+//            // Create PaymentTerms element
+//            $paymentTermsElement = $dom->createElement('cac:PaymentTerms');
+//            // Create Note element and set its value to "Net"
+//            $noteElement = $dom->createElement('cbc:Note', 'Net');
+//            // Append Note element to PaymentTerms element
+//            $paymentTermsElement->appendChild($noteElement);
+//
+//            // Find the appropriate place to insert the PaymentTerms element
+//            // For example, insert it after the first Invoice element
+//            $invoices = $xpath->query('//cac:Invoice');
+//            if ($invoices->length > 0) {
+//                $invoices->item(0)->parentNode->insertBefore($paymentTermsElement, $invoices->item(0)->nextSibling);
+//            } else {
+//                // If no Invoice elements exist, append it to the end of the document
+//                $dom->documentElement->appendChild($paymentTermsElement);
+//            }
+//        }
+//    }
+
     private function overwritePaymentTerms(DOMDocument $dom)
     {
         $xpath = new DOMXPath($dom);
 
-        // Find all cac:PaymentTerms elements
-        $paymentTerms = $xpath->query('//cac:PaymentTerms');
+        // Find all existing cac:PaymentTerms elements
+        $paymentTermsList = $xpath->query('//cac:PaymentTerms');
 
-        // Remove all but the first PaymentTerms element
-        for ($i = 1; $i < $paymentTerms->length; $i++) {
-            $paymentTerm = $paymentTerms->item($i);
-            $paymentTerm->parentNode->removeChild($paymentTerm);
-        }
-
-        // If there's no existing PaymentTerms element, create one
-        if ($paymentTerms->length === 0) {
-            // Create PaymentTerms element
-            $paymentTermsElement = $dom->createElement('cac:PaymentTerms');
-            // Create Note element and set its value to "Net"
-            $noteElement = $dom->createElement('cbc:Note', 'Net');
-            // Append Note element to PaymentTerms element
-            $paymentTermsElement->appendChild($noteElement);
-
-            // Find the appropriate place to insert the PaymentTerms element
-            // For example, insert it after the first Invoice element
-            $invoices = $xpath->query('//cac:Invoice');
-            if ($invoices->length > 0) {
-                $invoices->item(0)->parentNode->insertBefore($paymentTermsElement, $invoices->item(0)->nextSibling);
-            } else {
-                // If no Invoice elements exist, append it to the end of the document
-                $dom->documentElement->appendChild($paymentTermsElement);
+        // If there are more than one PaymentTerms elements, remove all but the first one
+        if ($paymentTermsList->length > 1) {
+            // Remove all PaymentTerms elements except the first one
+            for ($i = 1; $i < $paymentTermsList->length; $i++) {
+                $paymentTermsList->item($i)->parentNode->removeChild($paymentTermsList->item($i));
             }
         }
+
+        // If no PaymentTerms element exists, do nothing
+        if ($paymentTermsList->length === 0) {
+            return;
+        }
+
+        // Retrieve the first PaymentTerms element
+        $terms = $paymentTermsList->item(0);
+
+        // Remove all existing child elements
+        while ($terms->hasChildNodes()) {
+            $terms->removeChild($terms->firstChild);
+        }
+
+        // Create and append the new cbc:Note element
+        $noteElement = $dom->createElement('cbc:Note', 'Net');
+        $terms->appendChild($noteElement);
     }
+
 
 
     private function copyLineExtensionAmountToTaxExclusiveAmount(DOMDocument $dom) {
@@ -965,7 +1000,7 @@ class Converter
         }
     }
 
-    private function adjustPriceAndQuantity(DOMDocument $dom) {
+    private function adjustPriceAndQuantityOnInvoice(DOMDocument $dom) {
         $xpath = new DOMXPath($dom);
         $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
         $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
@@ -990,6 +1025,35 @@ class Converter
 
                 $invoicedQuantityNode = $xpath->query('cbc:InvoicedQuantity', $invoiceLine)->item(0);
                 $invoicedQuantityNode->nodeValue = $newInvoicedQuantity;
+            }
+        }
+    }
+
+    private function adjustPriceAndQuantityOnCreditNote(DOMDocument $dom) {
+        $xpath = new DOMXPath($dom);
+        $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+        $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+
+        // Find all CreditNoteLine elements
+        $creditNoteLines = $xpath->query('//cac:CreditNoteLine');
+
+        foreach ($creditNoteLines as $creditNoteLine) {
+            // Find PriceAmount and CreditedQuantity elements
+            $priceAmountNode = $xpath->query('cac:Price/cbc:PriceAmount', $creditNoteLine)->item(0);
+            $creditedQuantityNode = $xpath->query('cbc:CreditedQuantity', $creditNoteLine)->item(0);
+
+            if ($priceAmountNode && $creditedQuantityNode) {
+                // Get the values
+                $priceAmount = floatval($priceAmountNode->nodeValue);
+                $creditedQuantity = floatval($creditedQuantityNode->nodeValue);
+
+                // Make both PriceAmount and Quantity positive
+                $newPriceAmount = abs($priceAmount);
+                $newCreditedQuantity = abs($creditedQuantity);
+
+                // Update the elements with the new values
+                $priceAmountNode->nodeValue = $newPriceAmount;
+                $creditedQuantityNode->nodeValue = $newCreditedQuantity;
             }
         }
     }

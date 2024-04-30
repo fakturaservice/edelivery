@@ -30,17 +30,17 @@ try {
     echo "* schemeID: " . EndpointID::getId($endpointAddrArr[0]) . "\n";
 
     echo $printSeparator . "\n";
-//        if(!$nemLoopUpCli->lookupEndpoint($endpointAddr, $httpCode))
+    $documentTypeInv    = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_INV;
+    $documentTypeCre    = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_CRE;
+    $documentTypeMlr    = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_MLR;
+    $documentTypeOrdRes = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_ORD_RES;
 
-//        $documentType   = null;
-    $documentType   = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_INV;
-//        $documentType   = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_CRE;
-//        $documentType   = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_MLR;
-//        $documentType   = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_ORD_RES;
+    $isPeppol   =   $invPeppol = $loopUpCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentTypeInv);
+    $isPeppol   |=  $crePeppol = $loopUpCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentTypeCre);
+    $isPeppol   |=  $OrdResPeppol = $loopUpCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentTypeOrdRes);
 
-    $isPeppol   = $loopUpCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentType);
     $isNHR      = $loopUpCli->lookupEndpoint($endpointAddr, $httpCode);
-    echo "* Endpoint {$endpointAddr} is " . ($isPeppol?"":"*NOT* ") . "registered on PEPPOL SML\n";
+    echo "* Endpoint {$endpointAddr} is " . ($isPeppol?"":"*NOT* ") . "registered on PEPPOL SML(" . ($invPeppol?"Inv ":"") . ($crePeppol?"Cre ":"") . ($OrdResPeppol?"ResOrd ":"") . ")\n";
     echo "* Endpoint {$endpointAddr} is " . ($isNHR?"":"*NOT* ") . "registered on NHR SML\n";
 
     echo $printSeparator;
