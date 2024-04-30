@@ -770,40 +770,6 @@ class Converter
     /**
      * @throws DOMException
      */
-//    private function overwritePaymentTerms(DOMDocument $dom)
-//    {
-//        $xpath = new DOMXPath($dom);
-//
-//        // Find all cac:PaymentTerms elements
-//        $paymentTerms = $xpath->query('//cac:PaymentTerms');
-//
-//        // Remove all but the first PaymentTerms element
-//        for ($i = 1; $i < $paymentTerms->length; $i++) {
-//            $paymentTerm = $paymentTerms->item($i);
-//            $paymentTerm->parentNode->removeChild($paymentTerm);
-//        }
-//
-//        // If there's no existing PaymentTerms element, create one
-//        if ($paymentTerms->length === 0) {
-//            // Create PaymentTerms element
-//            $paymentTermsElement = $dom->createElement('cac:PaymentTerms');
-//            // Create Note element and set its value to "Net"
-//            $noteElement = $dom->createElement('cbc:Note', 'Net');
-//            // Append Note element to PaymentTerms element
-//            $paymentTermsElement->appendChild($noteElement);
-//
-//            // Find the appropriate place to insert the PaymentTerms element
-//            // For example, insert it after the first Invoice element
-//            $invoices = $xpath->query('//cac:Invoice');
-//            if ($invoices->length > 0) {
-//                $invoices->item(0)->parentNode->insertBefore($paymentTermsElement, $invoices->item(0)->nextSibling);
-//            } else {
-//                // If no Invoice elements exist, append it to the end of the document
-//                $dom->documentElement->appendChild($paymentTermsElement);
-//            }
-//        }
-//    }
-
     private function overwritePaymentTerms(DOMDocument $dom)
     {
         $xpath = new DOMXPath($dom);
