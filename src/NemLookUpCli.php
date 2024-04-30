@@ -298,10 +298,13 @@ class NemLookUpCli
      */
     private function get($api, &$httpCode, $timeout=0, $url=self::NEM_API_URL)
     {
-        $curl = curl_init();
+        $curl   = curl_init();
+
+        $this->_log->log("OS:" . PHP_OS . (strpos(PHP_OS, 'WINNT')?" - Using SSL":" - *NOT* using SSL"));
 
         curl_setopt_array($curl, array(
             CURLOPT_URL => $url . $api,
+            CURLOPT_SSL_VERIFYPEER => strpos(PHP_OS, 'WINNT'),//Only false when in cygwin
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -319,6 +322,11 @@ class NemLookUpCli
             $curlErr = curl_error($curl);
             $this->_log->log(empty($curlErr)?"No error response received":$curlErr, Logger::LV_2, Logger::LOG_ERR);
             curl_close($curl);
+
+            $this->_log->log("Response code: $httpCode",
+                (($httpCode > 201)?Logger::LV_2:Logger::LV_3),
+                (($httpCode > 201)?Logger::LOG_WARN:Logger::LOG_OK));
+
             return false;
         }
         curl_close($curl);
