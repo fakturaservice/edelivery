@@ -69,7 +69,10 @@ class OxalisCli
     public function registerAccountReceiver(string $participantId, string $ledgersId): bool
     {
         if(!isset($this->_oxalisDB))
+        {
+            $this->_log->log("OXALIS DB is NOT configured", Logger::LV_1, Logger::LOG_ERR);
             return false;
+        }
 
         $query  = "INSERT ";
         $query  .= "INTO ";
@@ -96,7 +99,10 @@ class OxalisCli
     {
         $r = [];
         if(!isset($this->_oxalisDB))
+        {
+            $this->_log->log("OXALIS DB is NOT configured", Logger::LV_1, Logger::LOG_ERR);
             return $r;
+        }
 
         $selectQuery  = "SELECT ";
         $selectQuery  .= "  * ";
@@ -114,7 +120,10 @@ class OxalisCli
     public function unregisterAccountReceiver(string $participantId): bool
     {
         if(!isset($this->_oxalisDB))
+        {
+            $this->_log->log("OXALIS DB is NOT configured", Logger::LV_1, Logger::LOG_ERR);
             return false;
+        }
 
         $deleteQuery  = "DELETE ";
         $deleteQuery  .= "FROM ";
@@ -146,7 +155,10 @@ class OxalisCli
     public function inbox(string $endpoint=null): array
     {
         if(!isset($this->_oxalisDB))
+        {
+            $this->_log->log("OXALIS DB is NOT configured", Logger::LV_1, Logger::LOG_ERR);
             return [];
+        }
 
         $eDocuments = [];
 
