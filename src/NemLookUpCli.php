@@ -300,11 +300,11 @@ class NemLookUpCli
     {
         $curl   = curl_init();
 
-        $this->_log->log("OS:" . PHP_OS . (strpos(PHP_OS, 'WINNT')?" - Using SSL":" - *NOT* using SSL"));
+        $this->_log->log("OS:" . PHP_OS . ((strpos(PHP_OS, 'WINNT') === false)?" - Using SSL":" - *NOT* using SSL"));
 
         curl_setopt_array($curl, array(
             CURLOPT_URL => $url . $api,
-            CURLOPT_SSL_VERIFYPEER => strpos(PHP_OS, 'WINNT'),//Only false when in cygwin
+            CURLOPT_SSL_VERIFYPEER => (strpos(PHP_OS, 'WINNT') === false),//Only false when in cygwin
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
