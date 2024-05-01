@@ -50,6 +50,7 @@ abstract class OIOUBL_base
 
     /** @var mixed */
     private $_xslResult;
+    private bool $_xslResultBool = true;
     protected string $cbcEmptyChar  = "-";
     protected ?string $rawInputXml;
 
@@ -221,9 +222,10 @@ abstract class OIOUBL_base
         if($this->_resourcesPath === null)
         {
             $this->_xslResult = "\n<b>(" . ($this->_isOIOUBL?"OIOUBL":"PEPPOL") . ") XSL Error:</b></br>\n----------------</br>\n</br>\n No XSL resource defined";
-            return false;
+            $this->_xslResultBool = false;
+            return $this->_xslResultBool;
         }
-        $success    = true;
+        $this->_xslResultBool    = true;
         if($this->_isOIOUBL)
             $xslFile    = "$this->_resourcesPath/xsl/OIOUBL_{$this->_catalogueType}_Schematron.xsl";
         else
@@ -273,17 +275,19 @@ abstract class OIOUBL_base
         if(!$this->_xslResult || strstr($this->_xslResult,"<Error"))
         {
             $this->_xslResult = "\n<b>(" . ($this->_isOIOUBL?"OIOUBL":"PEPPOL") . ") XSL Error:</b></br>\n----------------</br>\n</br>\n" . $this->_xslResult;
-            $success = false;
+            $this->_xslResultBool = false;
         }
 
-        if($getErrorMsg && !$success)
+        if($getErrorMsg && !$this->_xslResultBool)
         {
             return $this->_xslResult;
         }
 
-        return $success;
+        return $this->_xslResultBool;
 
     }
+    public function getXslResultBool(): bool
+    {return $this->_xslResultBool;}
 
     /**
      * @throws DOMException
