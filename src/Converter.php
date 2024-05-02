@@ -551,7 +551,7 @@ class Converter
             $endpointId         = explode(':', $node->nodeValue);
             $node->nodeValue    = preg_replace('/\d+:/', '', $node->nodeValue);
 
-            if(($endpointId[0] === ICD::FI_OVT) || ($schemeID === EndpointID::FI_OVT))
+            if(($endpointId[0] === ICD::FI_OVT) && ($schemeID === EndpointID::FI_OVT))
                 $node->nodeValue = ICD::FI_OVT . ":{$node->nodeValue}";
             if(
                 ($endpointId[0] === EAS::CVR) ||
