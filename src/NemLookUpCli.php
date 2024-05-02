@@ -49,13 +49,13 @@ class NemLookUpCli
         $this->_lookUpCvr           = null;
         $this->_networkTypePriority = [
             //TODO: Enable this priority when more AS4 endpoints are working
-//            NetworkType::NemHandel_AS4,
-//            NetworkType::NemHandel_RASP,
-//            NetworkType::PEPPOL_AS4,
-
-            NetworkType::NemHandel_RASP,
             NetworkType::NemHandel_AS4,
             NetworkType::PEPPOL_AS4,
+            NetworkType::NemHandel_RASP,
+
+//            NetworkType::NemHandel_RASP,
+//            NetworkType::NemHandel_AS4,
+//            NetworkType::PEPPOL_AS4,
 
 //            NetworkType::PEPPOL_AS4,
 //            NetworkType::NemHandel_AS4,

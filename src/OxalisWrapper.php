@@ -62,7 +62,7 @@ class OxalisWrapper
 
         $this->_payloadDocument = new DOMDocument();
         $this->_payloadDocument->loadXML($payloadXmlString);
-        $this->_type            = $this->getDocumentType();
+        $this->_type            = $this->getDocumentTypeFromXml();
 
         $this->_sbdTemplateDocument = new DOMDocument();
         $this->_sbdTemplateDocument->loadXML(file_get_contents($this->_sbdTemplatePath));
@@ -245,6 +245,18 @@ class OxalisWrapper
 
         return (empty($prefix)?"":"$prefix::") . "$documentIdentificationStandard::$this->_type##$customizationID::$typeVersion";
     }
+
+    /**
+     * @return string
+     */
+    public function getDocumentType(): string
+    {
+        return $this->_type;
+    }
+
+    /**
+     * @return string
+     */
     public function getErrorMsg() : string
     {
         return $this->_log->getErrorMsg();
@@ -253,7 +265,7 @@ class OxalisWrapper
     /**
      * @throws Exception
      */
-    private function getDocumentType(): string
+    private function getDocumentTypeFromXml(): string
     {
         $xpath = new DOMXPath($this->_payloadDocument);
         $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
