@@ -65,6 +65,10 @@ class OxalisCli
     {
         return $this->_errors;
     }
+    public function resetErrors(): void
+    {
+        $this->_errors      = [];
+    }
 
     public function registerAccountReceiver(string $participantId, string $ledgersId): bool
     {

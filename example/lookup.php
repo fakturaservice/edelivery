@@ -19,7 +19,7 @@ try {
     $log            = new Logger($debugLevel);
     $log->setChannel(basename(__FILE__));
 
-    $loopUpCli   = new NemLookUpCli(new Logger($debugLevel));
+    $lookupCli   = new NemLookUpCli(new Logger($debugLevel));
 
     echo "\n$printSeparator";
     $endpointAddr = readline("* Enter the endpoint address: ");
@@ -35,18 +35,18 @@ try {
     $documentTypeMlr    = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_MLR;
     $documentTypeOrdRes = NemLookUpCli::BUSINESS_SCOPE_DOC_ID_IDENTIFIER_BUSDOX . "::" . NemLookUpCli::BUSINESS_SCOPE_INSTANCE_IDENTIFIER_ORD_RES;
 
-    $isPeppol   =   $invPeppol = $loopUpCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentTypeInv);
-    $isPeppol   |=  $crePeppol = $loopUpCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentTypeCre);
-    $isPeppol   |=  $OrdResPeppol = $loopUpCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentTypeOrdRes);
+    $isPeppol   =   $invPeppol = $lookupCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentTypeInv);
+    $isPeppol   |=  $crePeppol = $lookupCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentTypeCre);
+    $isPeppol   |=  $OrdResPeppol = $lookupCli->lookupEndpointPeppol($endpointAddr, $httpCode, $documentTypeOrdRes);
 
-    $isNHR      = $loopUpCli->lookupEndpoint($endpointAddr, $httpCode);
+    $isNHR      = $lookupCli->lookupEndpoint($endpointAddr, $httpCode);
     echo "* Endpoint {$endpointAddr} is " . ($isPeppol?"":"*NOT* ") . "registered on PEPPOL SML(" . ($invPeppol?"Inv ":"") . ($crePeppol?"Cre ":"") . ($OrdResPeppol?"ResOrd ":"") . ")\n";
     echo "* Endpoint {$endpointAddr} is " . ($isNHR?"":"*NOT* ") . "registered on NHR SML\n";
 
     echo $printSeparator;
     if($isNHR) {
-        $networkTypeIDs = array_unique($loopUpCli->getNetworkTypeIds($endpointAddr, null));
-        $participant = $loopUpCli->getParticipant();
+        $networkTypeIDs = array_unique($lookupCli->getNetworkTypeIds($endpointAddr, null));
+        $participant = $lookupCli->getParticipant();
         echo "* Participant:\n";
 
         $Key = $participant["Key"] ?? "";
@@ -63,7 +63,7 @@ try {
         echo "* \n";
         echo "* Compatible networkTypeIDs:\n";
         foreach ($networkTypeIDs as $networkTypeID) {
-            $ownerService = $loopUpCli->getOwnerServices($endpointAddr, $networkTypeID);
+            $ownerService = $lookupCli->getOwnerServices($endpointAddr, $networkTypeID);
             echo "* \t" . NetworkType::getName($networkTypeID) . "\n";
             echo "* \t\tOwnerService:\n";
             $EndpointReference = $ownerService["EndpointReference"] ?? "";
@@ -78,7 +78,7 @@ try {
             $DisplayName = $ownerService["DisplayName"] ?? "";
             echo "* \t\t\tDisplayName:          $DisplayName\n";
             echo "* \n";
-            $profileIDs = $loopUpCli->getProfileNames($endpointAddr, $networkTypeID, null);
+            $profileIDs = $lookupCli->getProfileNames($endpointAddr, $networkTypeID, null);
             echo "* \t\tCompatible profiles:\n";
             foreach ($profileIDs as $profileID) {
                 echo "* \t\t\t{$profileID}\n";
