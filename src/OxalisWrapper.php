@@ -354,9 +354,17 @@ class OxalisWrapper
             {
                 if($glnCh == NetworkType::PEPPOL_AS4)
                 {
-                    $this->_log->log("Found CustomizationID:    $customizationID (Falling back to default: '" .
-                        CustomizationID::peppol_poacc_trns_mlr_3 . "')", Logger::LV_2, Logger::LOG_WARN);
-                    return CustomizationID::peppol_poacc_trns_mlr_3;
+                    if(in_array($this->_type, [CatalogueType::Invoice, CatalogueType::CreditNote, CatalogueType::Reminder])) {
+                        $this->_log->log("Found CustomizationID:    $customizationID (Falling back to default: '" .
+                            CustomizationID::peppol_poacc_billing_3_0 . "')", Logger::LV_2, Logger::LOG_WARN);
+                        return CustomizationID::peppol_poacc_billing_3_0;
+                    }
+                    else
+                    {
+                        $this->_log->log("Found CustomizationID:    $customizationID (Falling back to default: '" .
+                            CustomizationID::peppol_poacc_trns_mlr_3 . "')", Logger::LV_2, Logger::LOG_WARN);
+                        return CustomizationID::peppol_poacc_trns_mlr_3;
+                    }
                 }
                 $this->_log->log("Found CustomizationID:    $customizationID (Falling back to default: '" .
                     CustomizationID::oioubl_2_1 . "')", Logger::LV_2, Logger::LOG_WARN);
