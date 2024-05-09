@@ -133,11 +133,12 @@ abstract class OxalisErrorCode
      */
     const E_APS24007 = "E-APS24007";
     /**
-     * %s
+     * Mandatory updates to the reference implementation or schematron
+     * has passed the deadline.
      */
     const E_APS24999 = "E-APS24999";
     /**
-     * %s
+     * General error code for exceptions thrown from Oxalis
      */
     const E_REF10001 = "E-REF10001";
     /**
