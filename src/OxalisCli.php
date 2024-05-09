@@ -57,9 +57,28 @@ class OxalisCli
         $errorMsgString = "";
         foreach ($this->_errors as $code => $msg)
         {
-            $errorMsgString .= "$code:$msg\n";
+            $errorMsgString .= "$code:{$this->extractErrorMessage($msg)}\n";
         }
         return $errorMsgString;
+    }
+    private function extractErrorMessage($xmlString): string
+    {
+        $xml = simplexml_load_string($xmlString);
+        $xml->registerXPathNamespace('ns', 'http://www.erst.dk/oxalis/api');
+
+        // Check if 'errorMessage' exists
+        $errorMessage = $xml->xpath('//ns:errorMessage');
+        if (!empty($errorMessage)) {
+            return (string) $errorMessage[0];
+        }
+
+        // Check if 'message' exists
+        $message = $xml->xpath('//ns:message');
+        if (!empty($message)) {
+            return (string) $message[0];
+        }
+
+        return "";
     }
     public function getErrorArr() : array
     {
