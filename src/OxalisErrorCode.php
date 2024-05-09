@@ -108,7 +108,8 @@ abstract class OxalisErrorCode
      */
     const E_APS24002 = "E-APS24002";
     /**
-     * %s
+     * General error code that is used for
+     * exceptions related to dispatch (C2).
      */
     const E_APS24003 = "E-APS24003";
     /**
