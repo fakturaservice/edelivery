@@ -170,8 +170,6 @@ class OxalisCli
         $this->_log->log("Sending document");
         $res = $this->post($xml, "outbox");
         $this->_log->log("Response received:\n\n$res\n");
-        if(!$this->success())
-            return "";
         return $this->handleResponse($res);
     }
 
@@ -370,6 +368,7 @@ class OxalisCli
 
                 $this->_log->log("Error received form Oxalis: $code:'$message'", Logger::LV_1, Logger::LOG_ERR);
             }
+            return array_key_last($this->_errors);
         }
 
         $UUIDNode   = $xpath->query('//api:messageUuid')->item(0);
