@@ -63,7 +63,10 @@ class OxalisCli
     }
     private function extractErrorMessage($xmlString): string
     {
-        $xml = simplexml_load_string($xmlString);
+        $xml = @simplexml_load_string($xmlString);
+        if($xml === false)
+            return $xmlString;
+
         $xml->registerXPathNamespace('ns', 'http://www.erst.dk/oxalis/api');
 
         // Check if 'errorMessage' exists
