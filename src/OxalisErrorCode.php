@@ -2,6 +2,8 @@
 
 namespace Fakturaservice\Edelivery;
 
+use ReflectionClass;
+
 abstract class OxalisErrorCode
 {
     /**
@@ -168,5 +170,14 @@ abstract class OxalisErrorCode
      * having sent anything.
      */
     const W_APS32301 = "W-APS32301";
+
+    public static function isError($code): bool
+    {
+        // Get all defined constant values in this class
+        $constants = (new ReflectionClass(__CLASS__))->getConstants();
+
+        // Check if the provided code exists in the defined constants
+        return in_array($code, $constants);
+    }
 
 }
