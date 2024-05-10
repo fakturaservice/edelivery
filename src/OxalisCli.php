@@ -167,10 +167,11 @@ class OxalisCli
             $oxalisWrapper  = new OxalisWrapper($xml, new Logger($this->_log->getLogLevel()));
             $xml            = $oxalisWrapper->wrapSBD($networkTypeId);
         }
+        $httpCode = 0;
         $this->_log->log("Sending document");
-        $res = $this->post($xml, "outbox");
+        $res = $this->post($xml, "outbox", $httpCode);
         $this->_log->log("Response received:\n\n$res\n");
-        return $this->handleResponse($res);
+        return $this->handleResponse($res, $httpCode);
     }
 
     public function inbox(string $endpoint=null): array
@@ -303,9 +304,8 @@ class OxalisCli
         return false;
     }
 
-    private function post(string $xml, string $args): string
+    private function post(string $xml, string $args, int &$httpCode): string
     {
-        $this->_errors      = [];
         $curl = curl_init();
 
         $auth   = base64_encode("$this->_userName:$this->_passWord");
@@ -328,8 +328,6 @@ class OxalisCli
 
         $response = curl_exec($curl);
         $httpCode = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
-        if($httpCode !== 200)
-            $this->_errors["HTTP_RESPONSE:$httpCode"] = $response;
 
         curl_close($curl);
         return $response;
@@ -338,13 +336,13 @@ class OxalisCli
     /**
      * @throws Exception
      */
-    private function handleResponse(string $resXml): string
+    private function handleResponse(string $resXml, $httpCode): string
     {
         $responseDocument   = new DOMDocument();
         if(!$responseDocument->loadXML($resXml))
         {
-            $this->_errors["NO_XML_RESPONSE"]   = $resXml;
-            return "NO_XML_RESPONSE";
+            $this->_errors[$httpCode]   = $resXml;
+            return $httpCode;
         }
 
         $xpath = new DOMXPath($responseDocument);
