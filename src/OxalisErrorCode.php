@@ -176,8 +176,8 @@ abstract class OxalisErrorCode
         // Get all defined constant values in this class
         $constants = (new ReflectionClass(__CLASS__))->getConstants();
 
-        // Check if the provided code exists in the defined constants
-        return in_array($code, $constants);
+        // Check if the provided code exists in the defined constants or code is a http return code
+        return in_array($code, $constants) || ((strlen($code) <= 3) && $code > 201);
     }
 
 }

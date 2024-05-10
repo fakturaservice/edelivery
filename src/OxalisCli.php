@@ -167,7 +167,7 @@ class OxalisCli
             $oxalisWrapper  = new OxalisWrapper($xml, new Logger($this->_log->getLogLevel()));
             $xml            = $oxalisWrapper->wrapSBD($networkTypeId);
         }
-        $httpCode = 0;
+        $httpCode = 999;//Non-existing http return code in case curl fails
         $this->_log->log("Sending document");
         $res = $this->post($xml, "outbox", $httpCode);
         $this->_log->log("Response received:\n\n$res\n");
