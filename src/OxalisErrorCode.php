@@ -7,6 +7,10 @@ use ReflectionClass;
 abstract class OxalisErrorCode
 {
     /**
+     * Unknown error
+     */
+    const E_UNKNOWN = "E-UNKNOWN";
+    /**
      * Schematron error: %s
      */
     const E_APR21014 = "E-APR21014";
