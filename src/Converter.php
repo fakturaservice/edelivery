@@ -592,11 +592,17 @@ class Converter
         $partyTaxScheme = $xpath->query('//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme');
 
         // Get the values of EndpointID and PartyIdentificationID
-        $endpointID             = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID)');
-        $partyIdentificationID  = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID)');
+        $endpointID                 = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID)');
+        $partyIdentificationID      = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID)');
+        $countryIdentificationCode  = $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)');
 
         // Check if PartyTaxScheme is not present and EndpointID is different from PartyIdentificationID
         if ($partyTaxScheme->length === 0 && $endpointID !== $partyIdentificationID) {
+            // Prefix PartyIdentificationID if necessary
+            if (strpos($partyIdentificationID, $countryIdentificationCode) !== 0) {
+                $partyIdentificationID = $countryIdentificationCode . $partyIdentificationID;
+            }
+
             // Insert PartyTaxScheme after cac:PostalAddress
             $accountingCustomerParty = $xpath->query('//cac:AccountingCustomerParty/cac:Party')->item(0);
 
@@ -620,6 +626,7 @@ class Converter
             }
         }
     }
+
 
 
     /**
