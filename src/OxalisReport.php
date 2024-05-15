@@ -829,7 +829,7 @@ class OxalisReport
 
                 $this->_errors[$code]   = $message;
 
-                $this->_log->log("Error received form Oxalis: $code:'$message'", Logger::LV_1, Logger::LOG_ERR);
+                $this->_log->log("Error received from Oxalis: $code:'$message'", Logger::LV_1, Logger::LOG_ERR);
             }
             return array_key_last($this->_errors);
         }

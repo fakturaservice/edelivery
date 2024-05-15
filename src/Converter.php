@@ -663,6 +663,20 @@ class Converter
                     $newPartyLegalEntity->appendChild($newCompanyID);
                 }
 
+                //Looking fo Belgian Endpoint
+                if (stripos($endpointID, "be") === 0 && strpos($partyIdentificationID, substr($endpointID, 2)) !== false)
+                {
+                    $this->_log->log("Belgian PartyIdentification detected");
+                    $partyIdentification    = substr($endpointID, 2);
+                    $partyIdentificationElement = $xpath->query('//cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID')->item(0);
+                    if ($partyIdentificationElement instanceof DOMElement) {
+                        $this->_log->log("Setting nodeValue to: '$partyIdentification'");
+                        $partyIdentificationElement->nodeValue = $partyIdentification;
+                        $this->_log->log("Setting 'schemeID' to: '0208'");
+                        $partyIdentificationElement->setAttribute('schemeID', '0208');
+                    }
+                }
+
                 // Find cac:Contact
                 $contact = $xpath->query('cac:Contact', $accountingCustomerParty)->item(0);
 
