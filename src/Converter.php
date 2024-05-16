@@ -81,6 +81,7 @@ class Converter
         $this->removeEmptyElements($dom);
 //        $this->removeZeroTaxableAmount($dom);
         $this->removeOrderReference($dom);
+        $this->removeTaxSubtotalWithZeroTaxableAmount($dom);
 
         // Convert DOMDocument back to XML string
         $outputXml = $dom->saveXML();
@@ -1044,5 +1045,21 @@ class Converter
             }
         }
     }
+
+    private function removeTaxSubtotalWithZeroTaxableAmount(DOMDocument $dom)
+    {
+        $xpath = new DOMXPath($dom);
+
+        // Find cac:TaxSubtotal elements with cbc:TaxableAmount value of '0.00'
+        $taxSubtotals = $xpath->query('//cac:TaxSubtotal[cbc:TaxableAmount = "0.00"]');
+
+        // Loop through found elements and remove them
+        foreach ($taxSubtotals as $taxSubtotal) {
+            $taxCategory = $xpath->evaluate('string(cac:TaxCategory/cbc:ID)', $taxSubtotal);
+            $this->_log->log("Removing tax category '$taxCategory'");
+            $taxSubtotal->parentNode->removeChild($taxSubtotal);
+        }
+    }
+
 
 }
