@@ -651,7 +651,7 @@ class Converter
 //                $accountingCustomerParty->nodeValue = urlencode($accountingCustomerParty->nodeValue);
                 // Create new PartyLegalEntity block
                 $newPartyLegalEntity = $dom->createElement('cac:PartyLegalEntity');
-                $newRegistrationName = $dom->createElement('cbc:RegistrationName', $xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyName/cbc:Name)', $accountingCustomerParty));
+                $newRegistrationName = $dom->createElement('cbc:RegistrationName', htmlspecialchars($xpath->evaluate('string(//cac:AccountingCustomerParty/cac:Party/cac:PartyName/cbc:Name)', $accountingCustomerParty)));
                 // Append RegistrationName to PartyLegalEntity
                 $newPartyLegalEntity->appendChild($newRegistrationName);
 
