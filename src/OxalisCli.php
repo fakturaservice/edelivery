@@ -52,12 +52,12 @@ class OxalisCli
     {
         return empty($this->_errors);
     }
-    public function getErrorMsg() : string
+    public function getErrorMsg($includeCode=true) : string
     {
         $errorMsgString = "";
         foreach ($this->_errors as $code => $msg)
         {
-            $errorMsgString .= "$code:{$this->extractErrorMessage($msg)}\n";
+            $errorMsgString .= ($includeCode?"$code ":"") . "{$this->extractErrorMessage($msg)}\n";
         }
         return $errorMsgString;
     }
