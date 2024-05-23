@@ -78,8 +78,14 @@ try {
             $DisplayName = $ownerService["DisplayName"] ?? "";
             echo "* \t\t\tDisplayName:          $DisplayName\n";
             echo "* \n";
-            $profileIDs = $lookupCli->getProfileNames($endpointAddr, $networkTypeID, null);
-            echo "* \t\tCompatible profiles:\n";
+            $profileIDs = $lookupCli->getProfileNames($endpointAddr, $networkTypeID, "Customer");
+            echo "* \t\tCompatible 'Customer' profiles:\n";
+            foreach ($profileIDs as $profileID) {
+                echo "* \t\t\t{$profileID}\n";
+            }
+            echo "*\n";
+            $profileIDs = $lookupCli->getProfileNames($endpointAddr, $networkTypeID, "Supplier");
+            echo "* \t\tCompatible 'Supplier' profiles:\n";
             foreach ($profileIDs as $profileID) {
                 echo "* \t\t\t{$profileID}\n";
             }

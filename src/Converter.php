@@ -81,7 +81,8 @@ class Converter
         $this->removeEmptyElements($dom);
 //        $this->removeZeroTaxableAmount($dom);
         $this->removeOrderReference($dom);
-        $this->removeTaxSubtotalWithZeroTaxableAmount($dom);
+        $dom = $this->removeNamespaceDeclarationAttributes($dom);
+        $this->ensureCorrectTaxTotal($dom);
 
         // Convert DOMDocument back to XML string
         $outputXml = $dom->saveXML();
@@ -1046,20 +1047,126 @@ class Converter
         }
     }
 
-    private function removeTaxSubtotalWithZeroTaxableAmount(DOMDocument $dom)
+    /**
+     * @throws DOMException
+     */
+    private function ensureCorrectTaxTotal(DOMDocument $dom)
     {
         $xpath = new DOMXPath($dom);
 
-        // Find cac:TaxSubtotal elements with cbc:TaxableAmount value of '0.00'
-        $taxSubtotals = $xpath->query('//cac:TaxSubtotal[cbc:TaxableAmount = "0.00"]');
+        $currencyCode = $xpath->evaluate('string(//cbc:DocumentCurrencyCode)');
 
-        // Loop through found elements and remove them
-        foreach ($taxSubtotals as $taxSubtotal) {
-            $taxCategory = $xpath->evaluate('string(cac:TaxCategory/cbc:ID)', $taxSubtotal);
-            $this->_log->log("Removing tax category '$taxCategory'");
-            $taxSubtotal->parentNode->removeChild($taxSubtotal);
+        // Initialize sums for tax categories
+        $taxSums = [
+            'S' => 0.00,
+            'Z' => 0.00
+        ];
+
+        // Find all cac:InvoiceLine sections
+        $invoiceLines = $xpath->query('//cac:InvoiceLine');
+
+        $this->_log->log("Lines found: " . count($invoiceLines));
+
+        // Loop through all cac:InvoiceLine sections
+        foreach ($invoiceLines as $invoiceLine) {
+            // Get tax category ID
+            $taxCategoryID = $xpath->evaluate('string(cac:Item/cac:ClassifiedTaxCategory/cbc:ID)', $invoiceLine);
+
+            // Get line extension amount
+            $lineExtensionAmount = (float)$xpath->evaluate('string(cbc:LineExtensionAmount)', $invoiceLine);
+
+            // Sum the line extension amounts for the respective tax categories
+            if (isset($taxSums[$taxCategoryID])) {
+                $taxSums[$taxCategoryID] += $lineExtensionAmount;
+                $this->_log->log("Line extension amount on category '$taxCategoryID' => $lineExtensionAmount");
+            }
+        }
+
+        // Find or create cac:TaxTotal
+        $taxTotal = $xpath->query('//cac:TaxTotal')->item(0);
+        if (!$taxTotal) {
+            $taxTotal = $dom->createElement('cac:TaxTotal');
+            $dom->documentElement->appendChild($taxTotal);
+            $this->_log->log("Appending TaxTotal");
+        }
+
+        // Remove existing cac:TaxSubtotal elements
+        $existingTaxSubtotals = $xpath->query('cac:TaxSubtotal', $taxTotal);
+        foreach ($existingTaxSubtotals as $existingTaxSubtotal) {
+            $taxTotal->removeChild($existingTaxSubtotal);
+            $this->_log->log("Removing existing TaxSubtotal");
+        }
+
+        // Add new cac:TaxSubtotal elements based on calculated sums
+        foreach ($taxSums as $taxCategoryID => $taxableAmount) {
+            if ($taxableAmount > 0) {
+                $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
+                $taxTotal->appendChild($taxSubtotal);
+
+                $taxableAmountElement = $dom->createElement('cbc:TaxableAmount', number_format($taxableAmount, 2, '.', ''));
+                $taxableAmountElement->setAttribute('currencyID', $currencyCode);
+                $taxSubtotal->appendChild($taxableAmountElement);
+
+                // Calculate tax amount based on category
+                $taxAmount  = 0.00;
+                $percent    = 0.00;
+                if ($taxCategoryID == 'S') {
+                    $percent = 25.00;
+                    $taxAmount = $taxableAmount * ($percent / 100);
+                }
+                $taxAmount  = number_format($taxAmount, 2, '.', '');
+                $percent    = number_format($percent, 2, '.', '');
+
+                $taxAmountElement = $dom->createElement('cbc:TaxAmount', $taxAmount);
+                $taxAmountElement->setAttribute('currencyID', $currencyCode);
+                $taxSubtotal->appendChild($taxAmountElement);
+
+                $this->_log->log("Adding TaxSubtotal '$taxCategoryID' with amount: $taxAmount and percent: $percent%");
+
+                $taxCategory = $dom->createElement('cac:TaxCategory');
+                $taxSubtotal->appendChild($taxCategory);
+
+                $taxCategoryIDElement = $dom->createElement('cbc:ID', $taxCategoryID);
+                $taxCategory->appendChild($taxCategoryIDElement);
+
+                $percentElement = $dom->createElement('cbc:Percent', $percent);
+                $taxCategory->appendChild($percentElement);
+
+                $taxScheme = $dom->createElement('cac:TaxScheme');
+                $taxCategory->appendChild($taxScheme);
+
+                $taxSchemeID = $dom->createElement('cbc:ID', 'VAT');
+                $taxScheme->appendChild($taxSchemeID);
+            }
         }
     }
+
+    /**
+     * @param DOMDocument $dom
+     * @return DOMDocument
+     */
+    private function removeNamespaceDeclarationAttributes(DOMDocument $dom): DOMDocument
+    {
+        // Get all elements in the document
+        $elements = $dom->getElementsByTagName('*');
+
+        // Iterate through each element
+        foreach ($elements as $element) {
+            // Check if the element has any namespace declaration attributes
+            foreach ($element->attributes as $attribute) {
+                if (strpos($attribute->name, 'xmlns:') === 0) {
+                    // Remove the namespace declaration attribute
+                    $element->removeAttributeNode($attribute);
+                }
+            }
+        }
+
+        // Save the modified XML content
+        $tempDom = new DOMDocument;
+        $tempDom->loadXML($dom->saveXML());
+        return $tempDom;
+    }
+
 
 
 }
