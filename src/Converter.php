@@ -1058,8 +1058,8 @@ class Converter
 
         // Initialize sums for tax categories
         $taxSums = [
-            'S' => 0.00,
-            'Z' => 0.00
+//            'S' => 0.00,
+//            'Z' => 0.00
         ];
 
         // Find all cac:InvoiceLine sections
@@ -1074,6 +1074,10 @@ class Converter
 
             // Get line extension amount
             $lineExtensionAmount = (float)$xpath->evaluate('string(cbc:LineExtensionAmount)', $invoiceLine);
+
+            // Initialize sums for tax categories
+            if (!isset($taxSums[$taxCategoryID]))
+                $taxSums[$taxCategoryID] = 0.0;
 
             // Sum the line extension amounts for the respective tax categories
             if (isset($taxSums[$taxCategoryID])) {
@@ -1099,7 +1103,7 @@ class Converter
 
         // Add new cac:TaxSubtotal elements based on calculated sums
         foreach ($taxSums as $taxCategoryID => $taxableAmount) {
-            if ($taxableAmount > 0) {
+//            if ($taxableAmount > 0) {
                 $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
                 $taxTotal->appendChild($taxSubtotal);
 
@@ -1138,7 +1142,7 @@ class Converter
                 $taxSchemeID = $dom->createElement('cbc:ID', 'VAT');
                 $taxScheme->appendChild($taxSchemeID);
             }
-        }
+//        }
     }
 
     /**
