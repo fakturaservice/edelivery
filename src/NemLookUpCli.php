@@ -83,7 +83,7 @@ class NemLookUpCli
     {
         $api = "search/lookup/$cvr";
 
-        $lookUpCvr = $this->get($api, $httpCode, 1);
+        $lookUpCvr = $this->get($api, $httpCode, 2);
         $this->_lookUpCvr = json_decode($lookUpCvr, true);
     }
 
@@ -155,6 +155,9 @@ class NemLookUpCli
         {
             $this->lookupCvr($cvr, $httpCode);
         }
+        if(!isset($this->_lookUpCvr))
+            return [];
+
         $endpoints = [];
         $this->searchProperty($this->_lookUpCvr, "Key", $endpoints, "participant");
 
@@ -168,9 +171,13 @@ class NemLookUpCli
 
         foreach ($endpoints as $key => $participantKey)
         {
-            foreach($this->_lookUpCvr["modtagere"][$key]["participant"]["ParticipantBindings"] as $binding)
+            if(isset($this->_lookUpCvr["modtagere"][$key]["participant"]["ParticipantBindings"]))
             {
-                $networkTypeId[$key][] = $binding["NetworkTypeId"];
+                foreach ($this->_lookUpCvr["modtagere"][$key]["participant"]["ParticipantBindings"] as $binding)
+                {
+                    if(isset($binding["NetworkTypeId"]))
+                        $networkTypeId[$key][] = $binding["NetworkTypeId"];
+                }
             }
         }
 
