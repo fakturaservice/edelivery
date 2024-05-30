@@ -24,6 +24,22 @@ try {
     echo "\n$printSeparator";
     $endpointAddr = readline("* Enter the endpoint address: ");
     $endpointAddrArr    = explode(":", $endpointAddr);
+
+    if((count($endpointAddrArr) == 1) && (strlen($endpointAddrArr[0]) == 8))
+    {
+        $cvrLookup = $lookupCli->getNetworkTypeIdsFromCvr($endpointAddrArr[0]);
+
+        echo "* endpoints: \n";
+        foreach ($cvrLookup as $key => $value)
+        {
+            echo "* \tLookup => {$value["endpoint"]}\n";
+            echo "* \t                  {$value["UnitName"]}\n";
+            foreach ($value["NetworkTypeId"] as $netId)
+                echo "* \t                      " . NetworkType::getName($netId) . "\n";
+        }
+        die("* \n$printSeparator\n\n");
+    }
+
     if(EndpointID::getId($endpointAddrArr[0]) == $endpointAddrArr[0])
         die("* ERROR: '$endpointAddrArr[0]' is not a legal prefix\n$printSeparator\n\n");
 
@@ -50,16 +66,20 @@ try {
         echo "* Participant:\n";
 
         $Key = $participant["Key"] ?? "";
-        echo "* \tKey:      $Key\n";
+        echo "* \tKey:                  $Key\n";
 
         $KeyType = $participant["KeyType"] ?? "";
-        echo "* \tKeyType:  $KeyType\n";
+        echo "* \tKeyType:              $KeyType\n";
 
         $UnitCVR = $participant["UnitCVR"] ?? "";
-        echo "* \tUnitCVR:  $UnitCVR\n";
+        echo "* \tUnitCVR:              $UnitCVR\n";
 
         $UnitName = $participant["UnitName"] ?? "";
-        echo "* \tUnitName: $UnitName\n";
+        echo "* \tUnitName:             $UnitName\n";
+
+        $lastModifiedString = $participant["lastModifiedString"] ?? "";
+        echo "* \tlastModifiedString:   $lastModifiedString\n";
+
         echo "* \n";
         echo "* Compatible networkTypeIDs:\n";
         foreach ($networkTypeIDs as $networkTypeID) {

@@ -194,7 +194,7 @@ abstract class ICD
             case EndpointID::FR_VAT:	return self::FR_VAT;
             case EndpointID::DE_LID:	return self::DE_LID;
         }
-        return $schemeID;
+        return (string)$schemeID;
     }
     static function getIdsByAlpha2Code($alpha2Code): array
     {

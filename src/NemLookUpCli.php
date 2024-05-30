@@ -140,10 +140,47 @@ class NemLookUpCli
         if($includeType)
         {
             $endpoints = array_map(function ($a, $b) {
-                return EAS::getId($a) . ":" . $b;
+                return EAS::getId($a) . ":$b";
             }, $keyType, $endpoints);
         }
         return $endpoints;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getNetworkTypeIdsFromCvr($cvr = null): array
+    {
+        if(!isset($this->_lookUpCvr) && isset($cvr))
+        {
+            $this->lookupCvr($cvr, $httpCode);
+        }
+        $endpoints = [];
+        $this->searchProperty($this->_lookUpCvr, "Key", $endpoints, "participant");
+
+        $keyType = [];
+        $this->searchProperty($this->_lookUpCvr, "KeyType", $keyType, "participant");
+
+        $unitName = [];
+        $this->searchProperty($this->_lookUpCvr, "UnitName", $unitName, "participant");
+
+        $networkTypeId = [];
+
+        foreach ($endpoints as $key => $participantKey)
+        {
+            foreach($this->_lookUpCvr["modtagere"][$key]["participant"]["ParticipantBindings"] as $binding)
+            {
+                $networkTypeId[$key][] = $binding["NetworkTypeId"];
+            }
+        }
+
+        $endpoints = array_map(function ($a, $b, $c, $d) {
+            return ["endpoint" => EAS::getId($a) . ":$b", "UnitName" => $c, "NetworkTypeId" => $d];
+        }, $keyType, $endpoints, $unitName, $networkTypeId);
+
+        return $endpoints;
+
+
     }
 
     /**
