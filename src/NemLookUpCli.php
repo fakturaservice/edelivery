@@ -96,6 +96,8 @@ class NemLookUpCli
         {
             $this->lookupEndpoint($endpoint, $httpCode);
         }
+        if(empty($this->_lookUpEndpoint))
+            return [];
         $ownerServices = [];
         $this->searchProperty($this->_lookUpEndpoint, "OwnerService", $ownerServices);
 
@@ -114,6 +116,8 @@ class NemLookUpCli
         {
             $this->lookupEndpoint($endpoint, $httpCode);
         }
+        if(empty($this->_lookUpEndpoint))
+            return [];
         $participant = [];
         $this->searchProperty($this->_lookUpEndpoint, "participant", $participant);
 
@@ -131,6 +135,8 @@ class NemLookUpCli
         {
             $this->lookupCvr($cvr, $httpCode);
         }
+        if(empty($this->_lookUpCvr))
+            return [];
         $endpoints = [];
         $this->searchProperty($this->_lookUpCvr, "Key", $endpoints, "participant");
 
@@ -237,6 +243,8 @@ class NemLookUpCli
         {
             $this->lookupEndpoint($endpoint, $httpCode);
         }
+        if(empty($this->_lookUpEndpoint))
+            return [];
         $roleNames = [];
         $this->searchProperty($this->_lookUpEndpoint, "name", $roleNames, "role");
 
@@ -282,6 +290,8 @@ class NemLookUpCli
         {
             $this->lookupEndpoint($endpoint, $httpCode);
         }
+        if(empty($this->_lookUpEndpoint))
+            return [];
         $roleNames = [];
         $this->searchProperty($this->_lookUpEndpoint, "name", $roleNames, "role");
 

@@ -631,6 +631,57 @@ class Converter
 
 
 
+//    private function insertPartyTaxScheme(DOMDocument $dom)
+//    {
+//        $xpath = new DOMXPath($dom);
+//
+//        // Register namespaces
+////        $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+////        $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+//
+//        // Find all AccountingCustomerParty and AccountingSupplierParty elements
+//        $parties = $xpath->query('//cac:AccountingCustomerParty/cac:Party | //cac:AccountingSupplierParty/cac:Party');
+//
+//        foreach ($parties as $party) {
+//            // Check if PartyTaxScheme is present
+//            $partyTaxScheme = $xpath->query('cac:PartyTaxScheme', $party);
+//
+//            // Get the values of EndpointID and PartyIdentificationID
+//            $endpointID                = $xpath->evaluate('string(cbc:EndpointID)', $party);
+//            $partyIdentificationID     = $xpath->evaluate('string(cac:PartyIdentification/cbc:ID)', $party);
+//            $countryIdentificationCode = $xpath->evaluate('string(cac:PostalAddress/cac:Country/cbc:IdentificationCode)', $party);
+//
+//            // Check if PartyTaxScheme is not present and EndpointID is different from PartyIdentificationID
+//            if ($partyTaxScheme->length === 0 && $endpointID !== $partyIdentificationID) {
+//                // Prefix PartyIdentificationID if necessary
+//                if (strpos($partyIdentificationID, $countryIdentificationCode) !== 0) {
+//                    $partyIdentificationID = $countryIdentificationCode . $partyIdentificationID;
+//                }
+//
+//                // Insert PartyTaxScheme after cac:PostalAddress
+//                $postalAddress = $xpath->query('cac:PostalAddress', $party)->item(0);
+//
+//                if ($postalAddress instanceof DOMElement) {
+//                    // Create new PartyTaxScheme block
+//                    $newPartyTaxScheme = $dom->createElement('cac:PartyTaxScheme');
+//                    $newCompanyID = $dom->createElement('cbc:CompanyID', $partyIdentificationID);
+//                    $newTaxScheme = $dom->createElement('cac:TaxScheme');
+//                    $newTaxScheme->appendChild($dom->createElement('cbc:ID', 'VAT'));
+//
+//                    // Append elements to PartyTaxScheme
+//                    $newPartyTaxScheme->appendChild($newCompanyID);
+//                    $newPartyTaxScheme->appendChild($newTaxScheme);
+//
+//                    // Insert PartyTaxScheme after cac:PostalAddress
+//                    $party->insertBefore($newPartyTaxScheme, $postalAddress->nextSibling);
+//                }
+//            }
+//        }
+//    }
+
+
+
+
     /**
      * @throws DOMException
      */
@@ -989,6 +1040,9 @@ class Converter
         }
     }
 
+    /**
+     * @throws DOMException
+     */
     private function adjustPriceAndQuantityOnInvoice(DOMDocument $dom) {
         $xpath = new DOMXPath($dom);
         $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
@@ -1014,6 +1068,18 @@ class Converter
 
                 $invoicedQuantityNode = $xpath->query('cbc:InvoicedQuantity', $invoiceLine)->item(0);
                 $invoicedQuantityNode->nodeValue = $newInvoicedQuantity;
+            }
+
+            // Check if BaseQuantity is present in cac:Price after cbc:PriceAmount
+            $priceNode = $xpath->query('cac:Price', $invoiceLine)->item(0);
+            $baseQuantityNode = $xpath->query('cbc:BaseQuantity', $priceNode);
+
+            if ($baseQuantityNode->length == 0) {
+                // Create and append BaseQuantity element
+                $baseQuantityElement = $dom->createElement('cbc:BaseQuantity', '1');
+                $baseQuantityElement->setAttribute('unitCode', 'EA');
+                $priceNode->appendChild($baseQuantityElement);
+                $this->_log->log("Adding cbc:BaseQuantity");
             }
         }
     }

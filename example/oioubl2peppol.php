@@ -33,17 +33,17 @@ try
     $defaultPeppolFilepath = preg_replace('/(\.xml$)/', '-to-Peppol$1', $oioublFilepath);
 
     do{
-        $peppolFilepath = readline("* Filepath to output PEPPOL document('q' to quit, 'd' default to '$defaultPeppolFilepath'): ");
+        $peppolFilepath = readline("* Filepath to output PEPPOL document('q' to quit, [ENTER] default to '$defaultPeppolFilepath'): ");
         preg_match('/^.+\.xml$/i', $peppolFilepath, $isOutputFilePathValid);
     }while(
         !isset($isOutputFilePathValid[0]) &&
         (trim(strtolower($peppolFilepath)) !== "q") &&
-        (trim(strtolower($peppolFilepath)) !== "d")
+        (trim(strtolower($peppolFilepath)) !== "")
     );
     if(trim(strtolower($peppolFilepath)) == "q") {
         exit("$printSeparator\nGoodbye!\n");
     }
-    elseif(trim(strtolower($peppolFilepath)) == "d") {
+    elseif(trim(strtolower($peppolFilepath)) == "") {
         $peppolFilepath = $defaultPeppolFilepath;
         preg_match('/^.+\.xml$/i', $peppolFilepath, $isOutputFilePathValid);
     }
