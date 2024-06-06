@@ -1129,7 +1129,7 @@ class Converter
         ];
 
         // Find all cac:InvoiceLine sections
-        $invoiceLines = $xpath->query('//cac:InvoiceLine');
+        $invoiceLines = $xpath->query('//cac:InvoiceLine|//cac:CreditNoteLine');
 
         $this->_log->log("Lines found: " . count($invoiceLines));
 
