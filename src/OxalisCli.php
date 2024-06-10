@@ -226,11 +226,12 @@ class OxalisCli
         $this->_oxalisDB->query($updateMsgContQuery);
     }
 
-    public function cleanup($keepNumOfDays)
+    public function cleanup($keepNumOfDays): int
     {
         if(!isset($this->_oxalisDB))
         {
             $this->_log->log("OXALIS DB is NOT configured", Logger::LV_1, Logger::LOG_ERR);
+            return 0;
         }
 
         $selectQuery    = "UPDATE \n";
@@ -242,6 +243,8 @@ class OxalisCli
         $selectQuery    .= "    created_date < NOW() - INTERVAL $keepNumOfDays DAY; \n";
 
         $this->_oxalisDB->query($selectQuery);
+
+        return $this->_oxalisDB->affected_rows;
 
     }
 
