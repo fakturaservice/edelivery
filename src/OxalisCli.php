@@ -226,6 +226,25 @@ class OxalisCli
         $this->_oxalisDB->query($updateMsgContQuery);
     }
 
+    public function cleanup($keepNumOfDays)
+    {
+        if(!isset($this->_oxalisDB))
+        {
+            $this->_log->log("OXALIS DB is NOT configured", Logger::LV_1, Logger::LOG_ERR);
+        }
+
+        $selectQuery    = "UPDATE \n";
+        $selectQuery    .= "    Message_Content \n";
+        $selectQuery    .= "SET \n";
+        $selectQuery    .= "    data = NULL \n";
+        $selectQuery    .= "WHERE \n";
+        $selectQuery    .= "    data IS NOT NULL AND \n";
+        $selectQuery    .= "    created_date < NOW() - INTERVAL $keepNumOfDays DAY; \n";
+
+        $this->_oxalisDB->query($selectQuery);
+
+    }
+
     public function stripSBD($eDocument)
     {
         $dom = new DomDocument();
