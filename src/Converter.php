@@ -69,7 +69,8 @@ class Converter
         $this->removeSupplierAssignedAccountID($dom);
         $this->removeOtherCommunication($dom);
         $this->removeContactID($dom);
-        $this->removePaymentMeansPaymentMeansCode93($dom);
+//        $this->removePaymentMeansPaymentMeansCode93($dom);
+        $this->modifyPaymentMeansCode93($dom);
         $this->removePaymentMeansID($dom);
         $this->removePaymentChannelCode($dom);
         $this->overwritePaymentTerms($dom);
@@ -802,18 +803,61 @@ class Converter
         }
     }
 
-    private function removePaymentMeansPaymentMeansCode93(DOMDocument $dom)
+    /**
+     * @throws DOMException
+     */
+    private function modifyPaymentMeansCode93(DOMDocument $dom)
     {
         $xpath = new DOMXPath($dom);
 
         // Target cac:PaymentMeans where PaymentMeansCode is 93 and PaymentID is 71
-        $elementsToRemove = $xpath->query('//cac:PaymentMeans[cbc:PaymentMeansCode="93" and cbc:PaymentID="71"]');
+        $paymentMeansElements = $xpath->query('//cac:PaymentMeans[cbc:PaymentMeansCode="93" and cbc:PaymentID="71"]');
 
-        foreach ($elementsToRemove as $element) {
-            // Remove the found element
-            $element->parentNode->removeChild($element);
+        foreach ($paymentMeansElements as $paymentMeans) {
+            // Remove cac:PaymentMeans/cbc:PaymentDueDate
+            $paymentDueDate = $xpath->query('cbc:PaymentDueDate', $paymentMeans)->item(0);
+            if ($paymentDueDate) {
+                $paymentMeans->removeChild($paymentDueDate);
+                $this->_log->log("Removing cbc:PaymentDueDate from cac:PaymentMeans");
+            }
+
+            // Move and concatenate InstructionID with PaymentID
+            $instructionID = $xpath->evaluate('string(cbc:InstructionID)', $paymentMeans);
+            $paymentIDNode = $xpath->query('cbc:PaymentID', $paymentMeans)->item(0);
+
+            if ($instructionID && $paymentIDNode) {
+                $paymentIDNode->nodeValue .= '#' . $instructionID;
+                $this->_log->log("Move and concatenate InstructionID with PaymentID: $paymentIDNode->nodeValue");
+
+                // Remove InstructionID element
+                $instructionIDNode = $xpath->query('cbc:InstructionID', $paymentMeans)->item(0);
+                if ($instructionIDNode) {
+                    $paymentMeans->removeChild($instructionIDNode);
+                }
+            }
+
+            // Move AccountID to new PayeeFinancialAccount element
+            $accountID = $xpath->evaluate('string(cac:CreditAccount/cbc:AccountID)', $paymentMeans);
+
+            if ($accountID) {
+                // Create new PayeeFinancialAccount element
+                $payeeFinancialAccount = $dom->createElement('cac:PayeeFinancialAccount');
+                $newAccountID = $dom->createElement('cbc:ID', $accountID);
+                $payeeFinancialAccount->appendChild($newAccountID);
+
+                // Append new PayeeFinancialAccount element to PaymentMeans
+                $paymentMeans->appendChild($payeeFinancialAccount);
+
+                // Remove the old CreditAccount element
+                $creditAccount = $xpath->query('cac:CreditAccount', $paymentMeans)->item(0);
+                if ($creditAccount) {
+                    $paymentMeans->removeChild($creditAccount);
+                }
+                $this->_log->log("Move AccountID to new PayeeFinancialAccount element: $accountID");
+            }
         }
     }
+
 
     private function removePaymentMeansID(DOMDocument $dom)
     {
