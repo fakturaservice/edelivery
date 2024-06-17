@@ -69,9 +69,11 @@ class Converter
         $this->removeSupplierAssignedAccountID($dom);
         $this->removeOtherCommunication($dom);
         $this->removeContactID($dom);
-//        $this->removePaymentMeansPaymentMeansCode93($dom);
-        $this->modifyPaymentMeansCode93($dom);
+
+        $this->ensureConsistentPaymentMeansCode($dom);
+        $this->modifyPaymentMeansCode93OR50($dom);
         $this->removePaymentMeansID($dom);
+
         $this->removePaymentChannelCode($dom);
         $this->overwritePaymentTerms($dom);
         $this->copyLineExtensionAmountToTaxExclusiveAmount($dom);
@@ -803,15 +805,44 @@ class Converter
         }
     }
 
-    /**
-     * @throws DOMException
-     */
-    private function modifyPaymentMeansCode93(DOMDocument $dom)
+    private function ensureConsistentPaymentMeansCode(DOMDocument $dom)
     {
         $xpath = new DOMXPath($dom);
 
-        // Target cac:PaymentMeans where PaymentMeansCode is 93 and PaymentID is 71
-        $paymentMeansElements = $xpath->query('//cac:PaymentMeans[cbc:PaymentMeansCode="93" and cbc:PaymentID="71"]');
+        // Find all PaymentMeans elements
+        $paymentMeansNodes = $xpath->query('//cac:PaymentMeans');
+        if ($paymentMeansNodes->length > 1) {
+            // Get the PaymentMeansCode of the first PaymentMeans element
+            $firstPaymentMeansCode = $xpath->evaluate('string(cbc:PaymentMeansCode)', $paymentMeansNodes->item(0));
+
+            // Iterate through all PaymentMeans elements starting from the second one
+            for ($i = 1; $i < $paymentMeansNodes->length; $i++) {
+                $paymentMeansCode = $xpath->evaluate('string(cbc:PaymentMeansCode)', $paymentMeansNodes->item($i));
+
+                // If the PaymentMeansCode is different, remove the element
+                if ($paymentMeansCode !== $firstPaymentMeansCode) {
+                    $paymentMeansNodes->item($i)->parentNode->removeChild($paymentMeansNodes->item($i));
+                    $this->_log->log("Removing PaymentMeansCode: '$paymentMeansCode'");
+                }
+            }
+        }
+    }
+
+
+    /**
+     * @throws DOMException
+     */
+    private function modifyPaymentMeansCode93OR50(DOMDocument $dom)
+    {
+        $xpath = new DOMXPath($dom);
+
+        // Target cac:PaymentMeans where PaymentMeansCode is 93 and PaymentID is 71, 73, or 75
+        // OR where PaymentMeansCode is 50 and PaymentID is 01, 04, or 15
+        $paymentMeansElements = $xpath->query('//cac:PaymentMeans[
+            (cbc:PaymentMeansCode="93" and (cbc:PaymentID="71" or cbc:PaymentID="73" or cbc:PaymentID="75")) 
+            or 
+            (cbc:PaymentMeansCode="50" and (cbc:PaymentID="01" or cbc:PaymentID="04" or cbc:PaymentID="15"))
+        ]');
 
         foreach ($paymentMeansElements as $paymentMeans) {
             // Remove cac:PaymentMeans/cbc:PaymentDueDate
@@ -838,8 +869,16 @@ class Converter
 
             // Move AccountID to new PayeeFinancialAccount element
             $accountID = $xpath->evaluate('string(cac:CreditAccount/cbc:AccountID)', $paymentMeans);
+            $paymentMeansCode = $xpath->evaluate('string(cbc:PaymentMeansCode)', $paymentMeans);
 
             if ($accountID) {
+
+                if ($paymentMeansCode == "93" && strlen($accountID) != 8) {
+                    $accountID = ltrim($accountID, '0');
+                    $accountID = str_pad($accountID, 8, '0', STR_PAD_LEFT);
+                    $this->_log->log("Adjusted AccountID length for PaymentMeansCode $paymentMeansCode: $accountID");
+                }
+
                 // Create new PayeeFinancialAccount element
                 $payeeFinancialAccount = $dom->createElement('cac:PayeeFinancialAccount');
                 $newAccountID = $dom->createElement('cbc:ID', $accountID);
@@ -854,6 +893,21 @@ class Converter
                     $paymentMeans->removeChild($creditAccount);
                 }
                 $this->_log->log("Move AccountID to new PayeeFinancialAccount element: $accountID");
+
+            }
+
+            // Adjust the length of the AccountID based on the PaymentMeansCode
+            $idNode = $xpath->query('cac:PayeeFinancialAccount/cbc:ID', $paymentMeans)->item(0);
+
+            if ($idNode && $paymentMeansCode) {
+                $idValue = ltrim($idNode->nodeValue, '0');
+
+                if ($paymentMeansCode == "50" && strlen($idValue) < 7) {
+                    $idNode->nodeValue = str_pad($idValue, 7, '0', STR_PAD_LEFT);
+                } elseif ($paymentMeansCode == "93" && strlen($idValue) < 8) {
+                    $idNode->nodeValue = str_pad($idValue, 8, '0', STR_PAD_LEFT);
+                }
+                $this->_log->log("Adjusted AccountID length for PaymentMeansCode $paymentMeansCode: $idNode->nodeValue");
             }
         }
     }
@@ -864,11 +918,11 @@ class Converter
         $xpath = new DOMXPath($dom);
 
         // Check if cbc:ID exists in cac:PaymentMeans
-        $paymentMeansID = $xpath->query('//cac:PaymentMeans/cbc:ID');
+        $paymentMeansIDs = $xpath->query('//cac:PaymentMeans/cbc:ID');
 
-        if ($paymentMeansID->length > 0) {
-            // Remove the cbc:ID element
-            $paymentMeansID->item(0)->parentNode->removeChild($paymentMeansID->item(0));
+        foreach ($paymentMeansIDs as $paymentMeansID) {
+            // Remove each cbc:ID element
+            $paymentMeansID->parentNode->removeChild($paymentMeansID);
         }
     }
 
