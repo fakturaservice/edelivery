@@ -11,8 +11,8 @@ use Fakturaservice\Edelivery\OIOUBL\ProfileID;
 use Fakturaservice\Edelivery\OxalisWrapper;
 use Fakturaservice\Edelivery\util\Logger;
 
-//putenv('APP_ENV=prod');
-putenv('APP_ENV=dev');
+putenv('APP_ENV=prod');
+//putenv('APP_ENV=dev');
 
 try {
     $printSeparator = "*****************************************************************************\n";

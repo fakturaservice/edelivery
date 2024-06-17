@@ -5,8 +5,8 @@ use Exception;
 
 require_once __DIR__ . '/EReports.php';
 
-//putenv('APP_ENV=prod');
-putenv('APP_ENV=dev');
+putenv('APP_ENV=prod');
+//putenv('APP_ENV=dev');
 
 try
 {

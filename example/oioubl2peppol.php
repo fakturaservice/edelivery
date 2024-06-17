@@ -8,8 +8,8 @@ use Exception;
 use Fakturaservice\Edelivery\Converter;
 use Fakturaservice\Edelivery\util\Logger;
 
-//putenv('APP_ENV=prod');
-putenv('APP_ENV=dev');
+putenv('APP_ENV=prod');
+//putenv('APP_ENV=dev');
 
 try
 {
