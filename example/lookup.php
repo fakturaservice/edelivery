@@ -5,7 +5,8 @@ use Fakturaservice\Edelivery\OIOUBL\EndpointID;
 use Fakturaservice\Edelivery\OIOUBL\NetworkType;
 use Fakturaservice\Edelivery\util\Logger;
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../src/util/autoload_helper.php';
+require_once findComposerAutoload();
 
 //putenv('APP_ENV=prod');
 putenv('APP_ENV=dev');

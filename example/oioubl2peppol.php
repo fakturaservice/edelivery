@@ -1,7 +1,8 @@
 <?php
 namespace example;
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../src/util/autoload_helper.php';
+require_once findComposerAutoload();
 
 use Exception;
 use Fakturaservice\Edelivery\Converter;
