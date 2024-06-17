@@ -853,15 +853,20 @@ class Converter
             }
 
             // Move and concatenate InstructionID with PaymentID
-            $instructionID = $xpath->evaluate('string(cbc:InstructionID)', $paymentMeans);
+            $instructionID          = $xpath->evaluate('string(cbc:InstructionID)', $paymentMeans);
+            $instructionNote        = $xpath->evaluate('string(cbc:InstructionNote)', $paymentMeans);
+            $selectedInstruction    = strlen($instructionID) >= strlen($instructionNote) ? $instructionID : $instructionNote;
+
+//            $instructionID = $xpath->evaluate('string(cbc:InstructionID | cbc:InstructionNote)', $paymentMeans);
+
             $paymentIDNode = $xpath->query('cbc:PaymentID', $paymentMeans)->item(0);
 
-            if ($instructionID && $paymentIDNode) {
-                $paymentIDNode->nodeValue .= '#' . $instructionID;
+            if ($selectedInstruction && $paymentIDNode) {
+                $paymentIDNode->nodeValue .= '#' . $selectedInstruction;
                 $this->_log->log("Move and concatenate InstructionID with PaymentID: $paymentIDNode->nodeValue");
 
                 // Remove InstructionID element
-                $instructionIDNode = $xpath->query('cbc:InstructionID', $paymentMeans)->item(0);
+                $instructionIDNode = $xpath->query('cbc:InstructionID | cbc:InstructionNote', $paymentMeans)->item(0);
                 if ($instructionIDNode) {
                     $paymentMeans->removeChild($instructionIDNode);
                 }
