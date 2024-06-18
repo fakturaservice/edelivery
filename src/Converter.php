@@ -523,6 +523,9 @@ class Converter
                     case 'ZeroRated':
                         $taxID->nodeValue = 'Z';
                         break;
+                    case 'ReverseCharge':
+                        $taxID->nodeValue = 'AE';
+                        break;
                     case '63':
                         $taxID->nodeValue = 'VAT';
                         break;
