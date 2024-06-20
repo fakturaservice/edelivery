@@ -21,13 +21,13 @@ try
     $log            = new Logger($debugLevel);
     $log->setChannel(basename(__FILE__));
 
-    $converter      = new Converter2(__DIR__ . "/CII_2_BIS-Billing.xslt");
-
     echo "\n$printSeparator";
     do{
+        $xsltFilePath   = readline("* Filepath to XSL Stylesheet('q' to quit): ");
+        preg_match('/^.+\.xslt$/i', $xsltFilePath, $isXsltFilePathValid);
         $oioublFilepath = readline("* Filepath to input OIOUBL document('q' to quit): ");
         preg_match('/^.+\.xml$/i', $oioublFilepath, $isInputFilePathValid);
-    }while(!isset($isInputFilePathValid[0]) && (trim(strtolower($oioublFilepath)) !== "q"));
+    }while(!isset($isInputFilePathValid[0]) && !isset($isXsltFilePathValid[0]) && (trim(strtolower($oioublFilepath)) !== "q"));
     if(trim(strtolower($oioublFilepath)) == "q") {
         exit("$printSeparator\nGoodbye!\n");
     }
@@ -52,6 +52,7 @@ try
     echo "$printSeparator\n";
 
 //    $xmlInputFile   = file_get_contents($oioublFilepath);
+    $converter      = new Converter2(new Logger($debugLevel), $xsltFilePath);
     $xmlOutputFile  = $converter->convert($oioublFilepath);
 
     if(isset($isOutputFilePathValid[0]))

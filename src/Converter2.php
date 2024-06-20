@@ -2,20 +2,26 @@
 
 namespace Fakturaservice\Edelivery;
 
-use DOMDocument;
 use Exception;
-use XSLTProcessor;
+use Fakturaservice\Edelivery\util\Logger;
+use Fakturaservice\Edelivery\util\LoggerInterface;
 
 
 class Converter2
 {
     private string $_xsltFilePath;
     private ?\Saxon\SaxonProcessor $_saxonProc;
+    private string $_className;
+    private LoggerInterface $_log;
 
-    public function __construct(string $xsltFilePath) {
+    public function __construct(LoggerInterface $logger, string $xsltFilePath)
+    {
+        $this->_className       = basename(str_replace('\\', '/', get_called_class()));
+        $this->_log             = $logger;
+        $this->_log->setChannel($this->_className);
 
-        $this->_xsltFilePath = $xsltFilePath;
-        $this->_saxonProc   = (in_array("Saxon/C", get_loaded_extensions()))? new \Saxon\SaxonProcessor():null;
+        $this->_xsltFilePath    = $xsltFilePath;
+        $this->_saxonProc       = (in_array("Saxon/C", get_loaded_extensions()))? new \Saxon\SaxonProcessor():null;
     }
     public function __destruct()
     {
@@ -29,7 +35,10 @@ class Converter2
     public function convert($oioublXmlPath): string
     {
         if(!isset($this->_saxonProc))
+        {
+            $this->_log->log("Saxon/C is not installed", Logger::LV_3, Logger::LOG_ERR);
             return "";
+        }
 
         $xsltProc   = $this->_saxonProc->newXsltProcessor();
 
@@ -54,7 +63,8 @@ class Converter2
 
             unset($xsltProc);
 
-            return $errorStr;
+            $this->_log->log("Failed converting:\n$errorStr", Logger::LV_3, Logger::LOG_ERR);
+            return "";
         }
 
         // RELEASE RESOURCES
@@ -63,6 +73,7 @@ class Converter2
 
         unset($xsltProc);
 
+        $this->_log->log("Succeed converting document");
         return $xhtml;
 
     }
