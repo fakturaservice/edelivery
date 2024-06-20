@@ -24,9 +24,9 @@ try
     echo "\n$printSeparator";
     do{
         $xsltFilePath   = readline("* Filepath to XSL Stylesheet('q' to quit): ");
-        preg_match('/^.+\.xslt$/i', $xsltFilePath, $isXsltFilePathValid);
+        preg_match('/^.+\.xslt$/i', trim($xsltFilePath), $isXsltFilePathValid);
         $oioublFilepath = readline("* Filepath to input OIOUBL document('q' to quit): ");
-        preg_match('/^.+\.xml$/i', $oioublFilepath, $isInputFilePathValid);
+        preg_match('/^.+\.xml$/i', trim($oioublFilepath), $isInputFilePathValid);
     }while(!isset($isInputFilePathValid[0]) && !isset($isXsltFilePathValid[0]) && (trim(strtolower($oioublFilepath)) !== "q"));
     if(trim(strtolower($oioublFilepath)) == "q") {
         exit("$printSeparator\nGoodbye!\n");
