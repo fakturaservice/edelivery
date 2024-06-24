@@ -23,9 +23,10 @@ try
 
     echo "\n$printSeparator";
     do{
-        $xsltFilePath   = readline("* Filepath to XSL Stylesheet('q' to quit): ");
+        $xsltFilePath   = readline("* Filepath to XSL Stylesheet('q' to quit, [ENTER] to default): ");
         $xsltFilePath   = trim($xsltFilePath);
         if(strtolower($xsltFilePath) == "q") {exit("$printSeparator\nGoodbye!\n");}
+        if(strtolower($xsltFilePath) == "") {$xsltFilePath = __DIR__ . "/../src/resources/XSLT/OIOUBL-21_2_PEPPOL-BIS3.xslt";}
         preg_match('/^.+\.xslt$/i', $xsltFilePath, $isXsltFilePathValid);
 
         $oioublFilepath = readline("* Filepath to input OIOUBL document('q' to quit): ");
