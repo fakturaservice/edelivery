@@ -75,9 +75,6 @@ class Converter2
 
         $this->_log->log("Succeed converting document");
 
-        $xhtml  = preg_replace('/(<c[b|a]c:[a-zA-Z]+)(\s*xmlns:(cbc|cac)=\"urn:oasis:names:specification:ubl:schema:xsd:(CommonBasicComponents-2|CommonAggregateComponents-2)\"){1,2}(>)/', '$1$5', $xhtml);
-        $xhtml  = preg_replace('/(\n\s*)+/', "\n", $xhtml);
-
         return $xhtml;
 
     }

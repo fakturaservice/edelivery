@@ -17,7 +17,17 @@
 
 ******************************************************************************************************************
 -->
-<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100" xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100" xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" exclude-result-prefixes="xs rsm ram qdt udt">
+<xsl:stylesheet
+		version="2.0"
+		xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+		xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+		xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+		xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100"
+		xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100"
+		xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100"
+		xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100"
+		exclude-result-prefixes="xs rsm ram qdt udt">
 	<xsl:output method="xml" encoding="UTF-8" indent="yes"/>
 	<xsl:strip-space elements="*"/>
 	<xsl:template match="/">
