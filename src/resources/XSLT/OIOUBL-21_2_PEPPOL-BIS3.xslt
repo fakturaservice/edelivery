@@ -13,8 +13,9 @@
                         Proprietary and confidential
                         Written by Torben Wrang Laursen <twl@fakturaservice.dk>, June 2024
 
-    Changed:20240620: First initial template creation.
-    Changed:2024****: .....next update comment her....
+    Changed:20240620:   First initial template creation.
+    Changed:20240711:   Now OIOUBL Invoice with negitive InviceLine is converted to Allowance charge in BIS3.
+                        ReverseCharge is also converted correct
 
 ******************************************************************************************************************
 -->
@@ -79,68 +80,20 @@
     "/>
     <xsl:variable name="ReverseChargeCount" select="count(//cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='ReverseCharge'])"/>
 
-    <!-- Sum of LineExtensionAmount for StandardRated with TaxCurrencyCode condition -->
-    <xsl:variable name="SumLineExtensionAmountS_TaxCurrency" select="
-        sum(/oioubl:Invoice/cac:InvoiceLine[
-            $TaxCurrencyCode != '' and
-            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'StandardRated' and
-            cbc:LineExtensionAmount/@currencyID = $TaxCurrencyCode
-        ]/cbc:LineExtensionAmount)
-    "/>
-
-    <!-- Sum of LineExtensionAmount for ZeroRated with TaxCurrencyCode condition -->
-    <xsl:variable name="SumLineExtensionAmountZ_TaxCurrency" select="
-        sum(/oioubl:Invoice/cac:InvoiceLine[
-            $TaxCurrencyCode != '' and
-            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ZeroRated' and
-            cbc:LineExtensionAmount/@currencyID = $TaxCurrencyCode
-        ]/cbc:LineExtensionAmount)
-    "/>
-
-    <!-- Sum of LineExtensionAmount for ReverseCharge with TaxCurrencyCode condition -->
-    <xsl:variable name="SumLineExtensionAmountAE_TaxCurrency" select="
-        sum(/oioubl:Invoice/cac:InvoiceLine[
-            $TaxCurrencyCode != '' and
-            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ReverseCharge' and
-            cbc:LineExtensionAmount/@currencyID = $TaxCurrencyCode
-        ]/cbc:LineExtensionAmount)
-    "/>
-
-    <!--    <xsl:variable name="SumLineExtensionAmount" select="sum(/oioubl:Invoice/cac:InvoiceLine/cbc:LineExtensionAmount)"/>-->
-    <!--    <xsl:variable name="SumChargeAmount" select="sum(/oioubl:Invoice/cac:InvoiceLine/cac:AllowanceCharge[cbc:ChargeIndicator='true']/cbc:Amount)"/>-->
-    <!--    <xsl:variable name="SumAllowanceAmount" select="sum(/oioubl:Invoice/cac:InvoiceLine/cac:AllowanceCharge[cbc:ChargeIndicator='false']/cbc:Amount)"/>-->
-    <!--    &lt;!&ndash; Sum all amounts &ndash;&gt;-->
-    <!--    <xsl:variable name="TotalAmount" select="$SumLineExtensionAmount + $SumChargeAmount - $SumAllowanceAmount"/>-->
-
-    <!--    <xsl:variable name="SumLineExtensionAmount" select="sum(/oioubl:Invoice/cac:InvoiceLine/cbc:LineExtensionAmount)"/>-->
-    <!--    <xsl:variable name="SumChargeAmount" select="sum(/oioubl:Invoice/cac:AllowanceCharge[cbc:ChargeIndicator='true']/cbc:Amount)"/>-->
-    <!--    <xsl:variable name="SumAllowanceAmount" select="sum(/oioubl:Invoice/cac:AllowanceCharge[cbc:ChargeIndicator='false']/cbc:Amount)"/>-->
-
-    <!--    &lt;!&ndash; Global variable to calculate TaxExclusiveAmount &ndash;&gt;-->
-    <!--    <xsl:variable name="TaxExclusiveAmount" select="$SumLineExtensionAmount + $SumChargeAmount - $SumAllowanceAmount"/>-->
-
     <!-- Global variables for LineExtensionAmount, Charge, and Allowance -->
-    <xsl:variable name="SumLineExtensionAmount" select="sum(/oioubl:Invoice/cac:InvoiceLine/cbc:LineExtensionAmount)"/>
+    <xsl:variable name="SumLineExtensionAmount" select="sum(/oioubl:Invoice/cac:InvoiceLine/cbc:LineExtensionAmount[. &gt; 0])"/>
+    <xsl:variable name="SumLineExtensionNegativeAmount" select="abs(sum(/oioubl:Invoice/cac:InvoiceLine/cbc:LineExtensionAmount[. &lt; 0]))"/>
     <xsl:variable name="SumChargeAmount" select="sum(/oioubl:Invoice/cac:AllowanceCharge[cbc:ChargeIndicator='true']/cbc:Amount)"/>
-    <xsl:variable name="SumAllowanceAmount" select="sum(/oioubl:Invoice/cac:AllowanceCharge[cbc:ChargeIndicator='false']/cbc:Amount)"/>
-
-    <!-- Global variable for TaxExclusiveAmount -->
+    <xsl:variable name="SumAllowanceAmount" select="sum(/oioubl:Invoice/cac:AllowanceCharge[cbc:ChargeIndicator='false']/cbc:Amount) + $SumLineExtensionNegativeAmount"/>
     <xsl:variable name="TaxExclusiveAmount" select="$SumLineExtensionAmount + $SumChargeAmount - $SumAllowanceAmount"/>
-
-    <!-- Global variable for TaxInclusiveAmount -->
-    <xsl:variable name="SumTaxAmount" select="sum(/oioubl:Invoice/cac:TaxTotal/cbc:TaxAmount)"/>
+    <xsl:variable name="SumTaxAmount" select="sum(/oioubl:Invoice/cac:TaxTotal/cbc:TaxAmount[@currencyID = $DocumentCurrencyCode])"/>
     <xsl:variable name="TaxInclusiveAmount" select="$TaxExclusiveAmount + $SumTaxAmount"/>
-
-    <!-- Global variable for PayableAmount -->
     <xsl:variable name="SumPrepaidAmount" select="/oioubl:Invoice/cac:LegalMonetaryTotal/cbc:PrepaidAmount"/>
     <xsl:variable name="PayableAmount" select="$TaxInclusiveAmount - $SumPrepaidAmount"/>
 
 
-
-
     <!-- Template match for the root element -->
     <xsl:template match="/oioubl:Invoice">
-        <xsl:param name="DocumentCurrencyCode"/>
         <!--Variables for Invoice header-->
         <xsl:variable name="CustomizationID" select="'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'"/>
         <xsl:variable name="ProfileID" select="'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'"/>
@@ -164,9 +117,7 @@
         <xsl:variable name="TaxPointDate">
             <xsl:value-of select="cac:InvoiceLine/cbc:TaxPointDate"/>
         </xsl:variable>
-        <xsl:variable name="DocumentCurrencyCode">
-            <xsl:value-of select="cbc:DocumentCurrencyCode"/>
-        </xsl:variable>
+
         <!-- Start of BIS Invoice -->
         <Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
 
@@ -225,9 +176,18 @@
             </xsl:if>
 
             <!--Inserterting InvoicePeriod if present-->
-            <xsl:apply-templates select="cac:InvoicePeriod"/>
+            <xsl:if test="cac:InvoicePeriod/cbc:StartDate or cac:InvoicePeriod/cbc:EndDate">
+                <xsl:apply-templates select="cac:InvoicePeriod"/>
+            </xsl:if>
             <!-- OrderReference -->
-            <xsl:apply-templates select="cac:OrderReference"/>
+            <xsl:choose>
+                <xsl:when test="not(cac:OrderReference) and not(cbc:BuyerReference)">
+                    <cbc:BuyerReference>n/a</cbc:BuyerReference>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="cac:OrderReference"/>
+                </xsl:otherwise>
+            </xsl:choose>
             <!-- Billing Reference -->
             <xsl:apply-templates select="cac:BillingReference"/>
             <!-- Despatch document Reference -->
@@ -255,27 +215,34 @@
             <!-- AllowanceCharge -->
             <xsl:apply-templates select="/oioubl:Invoice/cac:AllowanceCharge"/>
 
-            <!--            &lt;!&ndash; Sum variables for AllowanceCharge &ndash;&gt;-->
-            <!--            <xsl:variable name="totalDiscount" select="sum(/oioubl:Invoice/cac:InvoiceLine[cac:Price/cbc:PriceAmount &lt; 0]/cac:Price/cbc:PriceAmount) * -1"/>-->
-            <!--            <xsl:variable name="totalTaxAmount" select="sum(/oioubl:Invoice/cac:InvoiceLine[cac:Price/cbc:PriceAmount &lt; 0]/cac:TaxTotal/cbc:TaxAmount) * -1"/>-->
+            <!-- Add AllowanceCharge if there are any discounts -->
+            <xsl:if test="$SumAllowanceAmount > 0">
 
-            <!--            &lt;!&ndash; Add AllowanceCharge if there are any discounts &ndash;&gt;-->
-            <!--            <xsl:if test="$totalDiscount > 0">-->
-            <!--                <cac:AllowanceCharge>-->
-            <!--                    <cbc:ChargeIndicator>false</cbc:ChargeIndicator>-->
-            <!--                    <cbc:AllowanceChargeReason>Discount</cbc:AllowanceChargeReason>-->
-            <!--                    <cbc:Amount currencyID="{$DocumentCurrencyCode}">-->
-            <!--                        <xsl:value-of select="$totalDiscount"/>-->
-            <!--                    </cbc:Amount>-->
-            <!--                    <cac:TaxCategory>-->
-            <!--                        <cbc:ID>S</cbc:ID>-->
-            <!--                        <cbc:Percent>25.00</cbc:Percent>-->
-            <!--                        <cac:TaxScheme>-->
-            <!--                            <cbc:ID>VAT</cbc:ID>-->
-            <!--                        </cac:TaxScheme>-->
-            <!--                    </cac:TaxCategory>-->
-            <!--                </cac:AllowanceCharge>-->
-            <!--            </xsl:if>-->
+                <xsl:for-each select="/oioubl:Invoice/cac:InvoiceLine[cbc:LineExtensionAmount &lt; 0]">
+                    <cac:AllowanceCharge>
+                        <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+                        <cbc:AllowanceChargeReason>
+                            <xsl:value-of select="cac:Item/cbc:Name"/>
+                        </cbc:AllowanceChargeReason>
+                        <cbc:Amount currencyID="{$DocumentCurrencyCode}">
+                            <xsl:value-of select="abs(cbc:LineExtensionAmount)"/>
+                        </cbc:Amount>
+                        <cac:TaxCategory>
+                            <cbc:ID>
+                                <xsl:call-template name="mapTaxCode">
+                                    <xsl:with-param name="taxString" select="cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID"/>
+                                </xsl:call-template>
+                            </cbc:ID>
+                            <cbc:Percent>
+                                <xsl:value-of select="cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent"/>
+                            </cbc:Percent>
+                            <cac:TaxScheme>
+                                <cbc:ID>VAT</cbc:ID>
+                            </cac:TaxScheme>
+                        </cac:TaxCategory>
+                    </cac:AllowanceCharge>
+                </xsl:for-each>
+            </xsl:if>
 
             <xsl:if test="cbc:DocumentCurrencyCode">
                 <xsl:apply-templates select="cac:TaxTotal[1]">
@@ -297,8 +264,8 @@
             <xsl:apply-templates select="cac:LegalMonetaryTotal"/>
 
             <!--InvoiceLines-->
-            <xsl:apply-templates select="cac:InvoiceLine"/>
-            <!--            <xsl:apply-templates select="cac:InvoiceLine[cac:Price/cbc:PriceAmount &gt;= 0]"/>-->
+            <!--            <xsl:apply-templates select="cac:InvoiceLine"/>-->
+            <xsl:apply-templates select="cac:InvoiceLine[cac:Price/cbc:PriceAmount &gt;= 0]"/>
 
         </Invoice>
     </xsl:template>
@@ -312,12 +279,16 @@
     <!--Invoice Period-->
     <xsl:template match="cac:InvoicePeriod">
         <cac:InvoicePeriod>
-            <cbc:StartDate>
-                <xsl:value-of select="cbc:StartDate"/>
-            </cbc:StartDate>
-            <cbc:EndDate>
-                <xsl:value-of select="cbc:EndDate"/>
-            </cbc:EndDate>
+            <xsl:if test="cbc:StartDate">
+                <cbc:StartDate>
+                    <xsl:value-of select="cbc:StartDate"/>
+                </cbc:StartDate>
+            </xsl:if>
+            <xsl:if test="cbc:EndDate">
+                <cbc:EndDate>
+                    <xsl:value-of select="cbc:EndDate"/>
+                </cbc:EndDate>
+            </xsl:if>
         </cac:InvoicePeriod>
     </xsl:template>
     <!--OrderReference-->
@@ -538,12 +509,15 @@
                 <cac:PartyLegalEntity>
                     <cbc:RegistrationName>
                         <xsl:choose>
-                            <xsl:when test="cac:Party/cac:PartyLegalEntity/cbc:RegistrationName">
+                            <xsl:when test="string(cac:Party/cac:PartyLegalEntity/cbc:RegistrationName) != ''">
                                 <xsl:value-of select="cac:Party/cac:PartyLegalEntity/cbc:RegistrationName"/>
                             </xsl:when>
-                            <xsl:when test="cac:Party/cac:PartyName/cbc:Name">
+                            <xsl:when test="string(cac:Party/cac:PartyName/cbc:Name) != ''">
                                 <xsl:value-of select="cac:Party/cac:PartyName/cbc:Name"/>
                             </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:text>n/a</xsl:text>
+                            </xsl:otherwise>
                         </xsl:choose>
                     </cbc:RegistrationName>
                     <!-- Call the mapping template -->
@@ -674,36 +648,53 @@
                         </cbc:IdentificationCode>
                     </cac:Country>
                 </cac:PostalAddress>
-                <xsl:if test="cac:Party/cac:PartyTaxScheme/cbc:CompanyID[@schemeID ='DK:SE']">
-                    <cac:PartyTaxScheme>
-                        <cbc:CompanyID>
-                            <xsl:value-of select="cac:Party/cac:PartyTaxScheme/cbc:CompanyID[@schemeID ='DK:SE']"/>
-                        </cbc:CompanyID>
-                        <cac:TaxScheme>
-                            <cbc:ID>VAT</cbc:ID>
-                        </cac:TaxScheme>
-                    </cac:PartyTaxScheme>
-                </xsl:if>
-                <xsl:if test="cac:Party/cac:PartyTaxScheme/cbc:CompanyID[@schemeID !='DK:SE']">
-                    <cac:PartyTaxScheme>
-                        <cbc:CompanyID>
-                            <xsl:value-of select="cac:Party/cac:PartyTaxScheme/cbc:CompanyID[@schemeID !='DK:SE']"/>
-                        </cbc:CompanyID>
-                        <cac:TaxScheme>
-                            <cbc:ID>TAX</cbc:ID>
-                        </cac:TaxScheme>
-                    </cac:PartyTaxScheme>
-                </xsl:if>
+
+                <xsl:choose>
+                    <xsl:when test="$ReverseChargeCount > 0">
+                        <cac:PartyTaxScheme>
+                            <cbc:CompanyID>
+                                <xsl:value-of select="cac:Party/cac:PartyIdentification/cbc:ID"/>
+                            </cbc:CompanyID>
+                            <cac:TaxScheme>
+                                <cbc:ID>VAT</cbc:ID>
+                            </cac:TaxScheme>
+                        </cac:PartyTaxScheme>
+                    </xsl:when>
+                    <xsl:when test="cac:Party/cac:PartyTaxScheme/cbc:CompanyID[@schemeID ='DK:SE']">
+                        <cac:PartyTaxScheme>
+                            <cbc:CompanyID>
+                                <xsl:value-of select="cac:Party/cac:PartyTaxScheme/cbc:CompanyID[@schemeID ='DK:SE']"/>
+                            </cbc:CompanyID>
+                            <cac:TaxScheme>
+                                <cbc:ID>VAT</cbc:ID>
+                            </cac:TaxScheme>
+                        </cac:PartyTaxScheme>
+                    </xsl:when>
+                    <xsl:when test="cac:Party/cac:PartyTaxScheme/cbc:CompanyID[@schemeID !='DK:SE']">
+                        <cac:PartyTaxScheme>
+                            <cbc:CompanyID>
+                                <xsl:value-of select="cac:Party/cac:PartyTaxScheme/cbc:CompanyID[@schemeID !='DK:SE']"/>
+                            </cbc:CompanyID>
+                            <cac:TaxScheme>
+                                <cbc:ID>TAX</cbc:ID>
+                            </cac:TaxScheme>
+                        </cac:PartyTaxScheme>
+                    </xsl:when>
+                </xsl:choose>
+
                 <!-- PartyLegalEntity will always be present for the Customer because the company registration name is mandatory-->
                 <cac:PartyLegalEntity>
                     <cbc:RegistrationName>
                         <xsl:choose>
-                            <xsl:when test="cac:Party/cac:PartyLegalEntity/cbc:RegistrationName">
+                            <xsl:when test="string(cac:Party/cac:PartyLegalEntity/cbc:RegistrationName) != ''">
                                 <xsl:value-of select="cac:Party/cac:PartyLegalEntity/cbc:RegistrationName"/>
                             </xsl:when>
-                            <xsl:when test="cac:Party/cac:PartyName/cbc:Name">
+                            <xsl:when test="string(cac:Party/cac:PartyName/cbc:Name) != ''">
                                 <xsl:value-of select="cac:Party/cac:PartyName/cbc:Name"/>
                             </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:text>n/a</xsl:text>
+                            </xsl:otherwise>
                         </xsl:choose>
                     </cbc:RegistrationName>
                     <!-- Call the mapping template -->
@@ -1062,15 +1053,16 @@
                     <cac:TaxSubtotal>
                         <cbc:TaxableAmount>
                             <xsl:attribute name="currencyID" select="$CurrencyCode"/>
-                            <xsl:value-of select="format-number($SumLineExtensionAmountZ, '0.00')"/>
+                            <xsl:value-of select="format-number($SumLineExtensionAmountAE, '0.00')"/>
                         </cbc:TaxableAmount>
                         <cbc:TaxAmount>
                             <xsl:attribute name="currencyID" select="$CurrencyCode"/>
-                            <xsl:value-of select="format-number($SumLineExtensionAmountZ * 0, '0.00')"/>
+                            <xsl:value-of select="format-number($SumLineExtensionAmountAE * 0, '0.00')"/>
                         </cbc:TaxAmount>
                         <cac:TaxCategory>
                             <cbc:ID>AE</cbc:ID>
-                            <!--                            <cbc:Percent>0.00</cbc:Percent>-->
+                            <cbc:Percent>0.00</cbc:Percent>
+                            <cbc:TaxExemptionReason>Reverse charge</cbc:TaxExemptionReason>
                             <cac:TaxScheme>
                                 <cbc:ID>VAT</cbc:ID>
                             </cac:TaxScheme>
@@ -1081,83 +1073,6 @@
             </xsl:if>
         </cac:TaxTotal>
     </xsl:template>
-
-    <!--    &lt;!&ndash;TaxTotal header main template &ndash;&gt;-->
-    <!--    <xsl:template match="cac:TaxTotal">-->
-    <!--        <xsl:param name="CurrencyCode"/>-->
-    <!--        <cac:TaxTotal>-->
-    <!--            <cbc:TaxAmount currencyID="{$CurrencyCode}">-->
-    <!--                <xsl:value-of select="format-number(cbc:TaxAmount[@currencyID = $CurrencyCode], '0.00')"/>-->
-    <!--            </cbc:TaxAmount>-->
-
-    <!--&lt;!&ndash;            <xsl:if test="$CurrencyCode = $DocumentCurrencyCode">&ndash;&gt;-->
-
-    <!--                &lt;!&ndash; Conditionally create TaxSubtotal for StandardRated &ndash;&gt;-->
-    <!--                <xsl:if test="$StandardRatedCount > 0">-->
-    <!--                    <cac:TaxSubtotal>-->
-    <!--                        <cbc:TaxableAmount>-->
-    <!--                            <xsl:attribute name="currencyID" select="$CurrencyCode"/>-->
-    <!--                            <xsl:value-of select="format-number($SumLineExtensionAmountS, '0.00')"/>-->
-    <!--                        </cbc:TaxableAmount>-->
-    <!--                        <cbc:TaxAmount>-->
-    <!--                            <xsl:attribute name="currencyID" select="$CurrencyCode"/>-->
-    <!--                            <xsl:value-of select="format-number($SumLineExtensionAmountS * 0.25, '0.00')"/>-->
-    <!--                        </cbc:TaxAmount>-->
-    <!--                        <cac:TaxCategory>-->
-    <!--                            <cbc:ID>S</cbc:ID>-->
-    <!--                            <cbc:Percent>25.00</cbc:Percent>-->
-    <!--                            <cac:TaxScheme>-->
-    <!--                                <cbc:ID>VAT</cbc:ID>-->
-    <!--                            </cac:TaxScheme>-->
-    <!--                        </cac:TaxCategory>-->
-    <!--                    </cac:TaxSubtotal>-->
-    <!--                </xsl:if>-->
-
-    <!--                &lt;!&ndash; Conditionally create TaxSubtotal for ZeroRated &ndash;&gt;-->
-    <!--                <xsl:if test="$ZeroRatedCount > 0">-->
-    <!--                    <cac:TaxSubtotal>-->
-    <!--                        <cbc:TaxableAmount>-->
-    <!--                            <xsl:attribute name="currencyID" select="$CurrencyCode"/>-->
-    <!--                            <xsl:value-of select="format-number($SumLineExtensionAmountZ, '0.00')"/>-->
-    <!--                        </cbc:TaxableAmount>-->
-    <!--                        <cbc:TaxAmount>-->
-    <!--                            <xsl:attribute name="currencyID" select="$CurrencyCode"/>-->
-    <!--                            <xsl:value-of select="format-number($SumLineExtensionAmountZ * 0, '0.00')"/>-->
-    <!--                        </cbc:TaxAmount>-->
-    <!--                        <cac:TaxCategory>-->
-    <!--                            <cbc:ID>Z</cbc:ID>-->
-    <!--                            <cbc:Percent>0.00</cbc:Percent>-->
-    <!--                            <cac:TaxScheme>-->
-    <!--                                <cbc:ID>VAT</cbc:ID>-->
-    <!--                            </cac:TaxScheme>-->
-    <!--                        </cac:TaxCategory>-->
-    <!--                    </cac:TaxSubtotal>-->
-    <!--                </xsl:if>-->
-
-    <!--                &lt;!&ndash; Conditionally create TaxSubtotal for ReverseCharge &ndash;&gt;-->
-    <!--                <xsl:if test="$ReverseChargeCount > 0">-->
-    <!--                    <cac:TaxSubtotal>-->
-    <!--                        <cbc:TaxableAmount>-->
-    <!--                            <xsl:attribute name="currencyID" select="$CurrencyCode"/>-->
-    <!--                            <xsl:value-of select="format-number($SumLineExtensionAmountZ, '0.00')"/>-->
-    <!--                        </cbc:TaxableAmount>-->
-    <!--                        <cbc:TaxAmount>-->
-    <!--                            <xsl:attribute name="currencyID" select="$CurrencyCode"/>-->
-    <!--                            <xsl:value-of select="format-number($SumLineExtensionAmountZ * 0, '0.00')"/>-->
-    <!--                        </cbc:TaxAmount>-->
-    <!--                        <cac:TaxCategory>-->
-    <!--                            <cbc:ID>AE</cbc:ID>-->
-    <!--                            &lt;!&ndash;                            <cbc:Percent>0.00</cbc:Percent>&ndash;&gt;-->
-    <!--                            <cac:TaxScheme>-->
-    <!--                                <cbc:ID>VAT</cbc:ID>-->
-    <!--                            </cac:TaxScheme>-->
-    <!--                        </cac:TaxCategory>-->
-    <!--                    </cac:TaxSubtotal>-->
-    <!--                </xsl:if>-->
-
-    <!--&lt;!&ndash;            </xsl:if>&ndash;&gt;-->
-    <!--        </cac:TaxTotal>-->
-    <!--    </xsl:template>-->
 
     <!--Totals header main template -->
     <xsl:template match="cac:LegalMonetaryTotal">
@@ -1331,7 +1246,7 @@
     <!--Building Item main template -->
     <xsl:template match="cac:Item">
         <cac:Item>
-            <xsl:if test="cbc:Description">
+            <xsl:if test="string(cbc:Description) != ''">
                 <cbc:Description>
                     <xsl:value-of select="cbc:Description"/>
                 </cbc:Description>
