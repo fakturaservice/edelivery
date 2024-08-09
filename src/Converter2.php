@@ -40,6 +40,8 @@ class Converter2
             return "";
         }
 
+        $this->_log->log("Saxon/C version: {$this->_saxonProc->version()}");
+
         $xsltProc   = $this->_saxonProc->newXsltProcessor();
 
         // LOAD XSLT SCRIPT
