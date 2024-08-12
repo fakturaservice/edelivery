@@ -6,7 +6,6 @@ use Exception;
 use Fakturaservice\Edelivery\util\Logger;
 use Fakturaservice\Edelivery\util\LoggerInterface;
 
-
 class Converter2
 {
     private string $_xsltFilePath;
@@ -66,47 +65,11 @@ class Converter2
         }
 
         $xsltProc->clearParameters();
-        $xsltProc->clearProperties();
-
         unset($xsltProc);
 
         $this->_log->log("Succeed converting document");
 
         return $xhtml;
-
-
-
-//        $xsltProc->setSourceFromFile($oioublXmlPath);
-//
-//        // RUN TRANSFORMATION
-//        $xhtml = $xsltProc->transformToString();
-//
-//        if(($errCnt = $xsltProc->getExceptionCount()) > 0)
-//        {
-//            $errorStr   = "\n<b>(HTML) XSD Error:</b></br>\n----------------</br>\n</br>\n";
-//            for($i = 0; $i < $errCnt; $i++)
-//            {
-//                $errorStr .= "{$xsltProc->getErrorCode($i)}:{$xsltProc->getErrorMessage($i)}" ;
-//            }
-//            // RELEASE RESOURCES
-//            $xsltProc->clearParameters();
-//            $xsltProc->clearProperties();
-//
-//            unset($xsltProc);
-//
-//            $this->_log->log("Failed converting:\n$errorStr", Logger::LV_3, Logger::LOG_ERR);
-//            return "";
-//        }
-//
-//        // RELEASE RESOURCES
-//        $xsltProc->clearParameters();
-//        $xsltProc->clearProperties();
-//
-//        unset($xsltProc);
-//
-//        $this->_log->log("Succeed converting document");
-//
-//        return $xhtml;
 
     }
 }
