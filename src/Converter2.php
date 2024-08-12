@@ -47,34 +47,26 @@ class Converter2
 
         $this->_log->log("Saxon/C version: {$this->_saxonProc->version()}");
 
-        $xsltProc   = $this->_saxonProc->newXsltProcessor();
+        $xsltProc   = $this->_saxonProc->newXslt30Processor();
 
         // LOAD XSLT SCRIPT
-        $xsltProc->compileFromFile($this->_xsltFilePath);
-
-        $xsltProc->setSourceFromFile($oioublXmlPath);
-
-        // RUN TRANSFORMATION
-        $xhtml = $xsltProc->transformToString();
-
-        if(($errCnt = $xsltProc->getExceptionCount()) > 0)
+        $executable = $xsltProc->compileFromFile($this->_xsltFilePath);
+        $xhtml     = $executable->transformFileToString($oioublXmlPath);
+        if($xhtml == NULL)
         {
-            $errorStr   = "\n<b>(HTML) XSD Error:</b></br>\n----------------</br>\n</br>\n";
-            for($i = 0; $i < $errCnt; $i++)
+            if($executable->exceptionOccurred())
             {
-                $errorStr .= "{$xsltProc->getErrorCode($i)}:{$xsltProc->getErrorMessage($i)}" ;
+                $errorStr   = "\n<b>(HTML) XSD Error:</b></br>\n----------------</br>\n</br>\n";
+                $errCode    = $executable->getErrorCode();
+                $errMessage = $executable->getErrorMessage();
+                $errorStr   .= 'Expected error: Code='.$errCode.' Message='.$errMessage;
+                $xsltProc->exceptionClear();
+
+                $this->_log->log("Failed converting:\n$errorStr", Logger::LV_3, Logger::LOG_ERR);
+                return "";
             }
-            // RELEASE RESOURCES
-            $xsltProc->clearParameters();
-            $xsltProc->clearProperties();
-
-            unset($xsltProc);
-
-            $this->_log->log("Failed converting:\n$errorStr", Logger::LV_3, Logger::LOG_ERR);
-            return "";
         }
 
-        // RELEASE RESOURCES
         $xsltProc->clearParameters();
         $xsltProc->clearProperties();
 
@@ -83,6 +75,40 @@ class Converter2
         $this->_log->log("Succeed converting document");
 
         return $xhtml;
+
+
+
+//        $xsltProc->setSourceFromFile($oioublXmlPath);
+//
+//        // RUN TRANSFORMATION
+//        $xhtml = $xsltProc->transformToString();
+//
+//        if(($errCnt = $xsltProc->getExceptionCount()) > 0)
+//        {
+//            $errorStr   = "\n<b>(HTML) XSD Error:</b></br>\n----------------</br>\n</br>\n";
+//            for($i = 0; $i < $errCnt; $i++)
+//            {
+//                $errorStr .= "{$xsltProc->getErrorCode($i)}:{$xsltProc->getErrorMessage($i)}" ;
+//            }
+//            // RELEASE RESOURCES
+//            $xsltProc->clearParameters();
+//            $xsltProc->clearProperties();
+//
+//            unset($xsltProc);
+//
+//            $this->_log->log("Failed converting:\n$errorStr", Logger::LV_3, Logger::LOG_ERR);
+//            return "";
+//        }
+//
+//        // RELEASE RESOURCES
+//        $xsltProc->clearParameters();
+//        $xsltProc->clearProperties();
+//
+//        unset($xsltProc);
+//
+//        $this->_log->log("Succeed converting document");
+//
+//        return $xhtml;
 
     }
 }
