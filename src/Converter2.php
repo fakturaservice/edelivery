@@ -21,12 +21,10 @@ class Converter2
         $this->_log->setChannel($this->_className);
 
         $this->_xsltFilePath    = $xsltFilePath;
-//        $this->_saxonProc       = (in_array("Saxon/C", get_loaded_extensions()))? new \Saxon\SaxonProcessor():null;
 
         $this->_saxonProc       = array_intersect(['Saxon/C', 'saxon'], array_map('strtolower', get_loaded_extensions()))
             ? new \Saxon\SaxonProcessor()
             : null;
-
     }
     public function __destruct()
     {
