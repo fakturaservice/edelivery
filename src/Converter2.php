@@ -48,7 +48,7 @@ class Converter2
 
         // LOAD XSLT SCRIPT
         $executable = $xsltProc->compileFromFile($this->_xsltFilePath);
-        $xhtml     = $executable->transformFileToString($oioublXmlPath);
+        $xhtml      = $executable->transformFileToString($oioublXmlPath);
         if($xhtml == NULL)
         {
             if($executable->exceptionOccurred())
@@ -59,6 +59,7 @@ class Converter2
                 $errorStr   .= 'Expected error: Code='.$errCode.' Message='.$errMessage;
                 $xsltProc->exceptionClear();
 
+                unset($xsltProc);
                 $this->_log->log("Failed converting:\n$errorStr", Logger::LV_3, Logger::LOG_ERR);
                 return "";
             }
