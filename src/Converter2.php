@@ -22,7 +22,7 @@ class Converter2
 
         $this->_xsltFilePath    = $xsltFilePath;
 
-        $this->_saxonProc       = array_intersect(['Saxon/C', 'saxon'], array_map('strtolower', get_loaded_extensions()))
+        $this->_saxonProc       = array_intersect(['Saxon/C', 'saxonc'], array_map('strtolower', get_loaded_extensions()))
             ? new \Saxon\SaxonProcessor()
             : null;
     }
