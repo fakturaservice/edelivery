@@ -7,7 +7,6 @@ require_once findComposerAutoload();
 use Exception;
 use Fakturaservice\Edelivery\Converter2;
 use Fakturaservice\Edelivery\util\Logger;
-use Psr\Log\LogLevel;
 
 //putenv('APP_ENV=prod');
 putenv('APP_ENV=dev');
