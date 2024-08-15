@@ -7,6 +7,7 @@ require_once findComposerAutoload();
 use Exception;
 use Fakturaservice\Edelivery\Converter2;
 use Fakturaservice\Edelivery\util\Logger;
+use Psr\Log\LogLevel;
 
 //putenv('APP_ENV=prod');
 putenv('APP_ENV=dev');
@@ -55,11 +56,17 @@ try
 
     echo "$printSeparator\n";
 
-//    $xmlInputFile   = file_get_contents($oioublFilepath);
     $converter      = new Converter2(new Logger($debugLevel), $xsltFilePath);
     $xmlOutputFile  = $converter->convert($oioublFilepath);
 
-    if(isset($isOutputFilePathValid[0]))
+    $xml = simplexml_load_string($xmlOutputFile);
+
+    // Check if the root element is 'Error' and contains 'Errortext'
+    if ($xml !== false && $xml->getName() == 'Error' && isset($xml->Errortext))
+    {
+        $log->log("Error in converting input XML: '$xml->Errortext'", Logger::LV_1, Logger::LOG_ERR);
+    }
+    else if(isset($isOutputFilePathValid[0]))
     {
         $log->log("Writing output file to: '$peppolFilepath'");
         file_put_contents($peppolFilepath, $xmlOutputFile);
