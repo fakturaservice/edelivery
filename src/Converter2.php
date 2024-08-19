@@ -59,14 +59,14 @@ class Converter2
                 $errorStr   .= 'Expected error: Code='.$errCode.' Message='.$errMessage;
                 $xsltProc->exceptionClear();
 
-                unlink($xsltProc);
+                unset($xsltProc);
                 $this->_log->log("Failed converting:\n$errorStr", Logger::LV_3, Logger::LOG_ERR);
                 return "";
             }
         }
 
         $xsltProc->clearParameters();
-        unlink($xsltProc);
+        unset($xsltProc);
 
         $this->_log->log("Succeed converting document");
 
