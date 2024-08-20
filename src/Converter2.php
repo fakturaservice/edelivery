@@ -9,9 +9,9 @@ use Fakturaservice\Edelivery\util\LoggerInterface;
 class Converter2
 {
     private string $_xsltFilePath;
-    private ?\Saxon\SaxonProcessor $_saxonProc;
     private string $_className;
     private LoggerInterface $_log;
+    private bool $_isSaxonLibInstalled;
 
     public function __construct(LoggerInterface $logger, string $xsltFilePath)
     {
@@ -19,16 +19,12 @@ class Converter2
         $this->_log             = $logger;
         $this->_log->setChannel($this->_className);
 
-        $this->_xsltFilePath    = $xsltFilePath;
+        $this->_xsltFilePath        = $xsltFilePath;
+        $this->_isSaxonLibInstalled = !empty(array_intersect(['Saxon/C', 'saxonc'], array_map('strtolower', get_loaded_extensions())));
 
-        $this->_saxonProc       = array_intersect(['Saxon/C', 'saxonc'], array_map('strtolower', get_loaded_extensions()))
-            ? new \Saxon\SaxonProcessor()
-            : null;
     }
     public function __destruct()
     {
-        if(isset($this->_saxonProc))
-            unset($this->_saxonProc);
     }
 
     /**
@@ -36,15 +32,17 @@ class Converter2
      */
     public function convert($oioublXmlPath): string
     {
-        if(!isset($this->_saxonProc))
+        if(!$this->_isSaxonLibInstalled)
         {
             $this->_log->log("Saxon/C is not installed", Logger::LV_3, Logger::LOG_ERR);
             return "";
         }
 
-        $this->_log->log("Saxon/C version: {$this->_saxonProc->version()}");
+        $saxonProc   = new \Saxon\SaxonProcessor();
 
-        $xsltProc   = $this->_saxonProc->newXslt30Processor();
+        $this->_log->log("Saxon/C version: {$saxonProc->version()}");
+
+        $xsltProc   = $saxonProc->newXslt30Processor();
 
         // LOAD XSLT SCRIPT
         $executable = $xsltProc->compileFromFile($this->_xsltFilePath);
@@ -60,6 +58,7 @@ class Converter2
                 $xsltProc->exceptionClear();
 
                 unset($xsltProc);
+                unset($saxonProc);
                 $this->_log->log("Failed converting:\n$errorStr", Logger::LV_3, Logger::LOG_ERR);
                 return "";
             }
@@ -67,6 +66,7 @@ class Converter2
 
         $xsltProc->clearParameters();
         unset($xsltProc);
+        unset($saxonProc);
 
         $this->_log->log("Succeed converting document");
 
