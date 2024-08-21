@@ -27,22 +27,22 @@ class OxalisCli
     private string $_passWord;
     private ?mysqli $_oxalisDB;
     private DateTime $_today;
-    private string $_className;
+    private string $_cliId;
     private array $_errors;
     private NemLookUpCli $_lookUpCli;
 
     /**
      * @throws Exception
      */
-    public function __construct(string $url, string $userName, string $passWord, LoggerInterface $logger)
+    public function __construct(string $url, string $userName, string $passWord, LoggerInterface $logger, string $clientId = null)
     {
         $this->_today       = new DateTime();
         $this->_url         = $url;
         $this->_userName    = $userName;
         $this->_passWord    = $passWord;
-        $this->_className   = basename(str_replace('\\', '/', get_called_class()));
+        $this->_cliId       = $clientId ?? basename(str_replace('\\', '/', get_called_class()));
         $this->_log         = $logger;
-        $this->_log->setChannel($this->_className);
+        $this->_log->setChannel($this->_cliId);
         $this->_errors      = [];
         $this->_oxalisDB    = null;
         $this->_lookUpCli   = new NemLookUpCli(clone($this->_log));
@@ -202,7 +202,7 @@ class OxalisCli
         $selectQuery    .= "    msg.direction = 'IN' AND \n";
         $selectQuery    .= "    (\n";
         $selectQuery    .= "        (msgCont.updated_by IS NULL) OR \n";
-        $selectQuery    .= "        (msgCont.updated_by != '$this->_className') \n";
+        $selectQuery    .= "        (msgCont.updated_by != '$this->_cliId') \n";
         $selectQuery    .= "    );\n";
 
         $res = $this->_oxalisDB->query($selectQuery);
@@ -220,7 +220,7 @@ class OxalisCli
     {
         $updateMsgContQuery    = "UPDATE \n";
         $updateMsgContQuery    .= "    oxalis_db.Message_Content t \n";
-        $updateMsgContQuery    .= "SET t.updated_by = '$this->_className' \n";
+        $updateMsgContQuery    .= "SET t.updated_by = '$this->_cliId' \n";
         $updateMsgContQuery    .= "WHERE t.id = '$id';\n";
 
         $this->_oxalisDB->query($updateMsgContQuery);
