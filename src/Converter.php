@@ -548,7 +548,7 @@ class Converter
         }
     }
 
-    private function convertAllSchemeIDsAndCleanUpEndpointID(DOMDocument $dom)
+    public function convertAllSchemeIDsAndCleanUpEndpointID(DOMDocument $dom)
     {
         $xpath = new DOMXPath($dom);
         $nodesWithSchemeID = $xpath->query('//*[@schemeID]');

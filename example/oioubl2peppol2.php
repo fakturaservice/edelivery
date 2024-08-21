@@ -4,7 +4,9 @@ namespace example;
 require_once __DIR__ . '/../src/util/autoload_helper.php';
 require_once findComposerAutoload();
 
+use DOMDocument;
 use Exception;
+use Fakturaservice\Edelivery\Converter;
 use Fakturaservice\Edelivery\Converter2;
 use Fakturaservice\Edelivery\util\Logger;
 
@@ -54,6 +56,14 @@ try
     }
 
     echo "$printSeparator\n";
+
+    // HACK: Converting EndpointIds
+    $dom = new DOMDocument;
+    $dom->load($oioublFilepath);
+    $converter1     = new Converter(new Logger($debugLevel));
+    $converter1->convertAllSchemeIDsAndCleanUpEndpointID($dom);
+    $outputXml = $dom->saveXML();
+    file_put_contents($oioublFilepath, $outputXml);
 
     $converter      = new Converter2(new Logger($debugLevel), $xsltFilePath);
     $xmlOutputFile  = $converter->convert($oioublFilepath);
