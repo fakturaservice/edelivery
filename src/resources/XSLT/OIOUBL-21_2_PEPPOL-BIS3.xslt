@@ -1176,7 +1176,7 @@
                             </xsl:if>
                             <cac:FinancialInstitutionBranch>
                                 <cbc:ID>
-                                    <xsl:value-of select="cac:PayeeFinancialAccount/cac:FinancialInstitutionBranch/cbc:ID"/>
+                                    <xsl:value-of select="cac:PayeeFinancialAccount/cac:FinancialInstitutionBranch/cac:FinancialInstitution/cbc:ID"/>
                                 </cbc:ID>
                             </cac:FinancialInstitutionBranch>
                         </cac:PayeeFinancialAccount>
