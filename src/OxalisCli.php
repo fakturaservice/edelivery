@@ -177,7 +177,7 @@ class OxalisCli
         return $this->handleResponse($res, $httpCode);
     }
 
-    public function inbox(string $endpoint=null): array
+    public function inbox(bool $unread=true, string $endpoint=null): array
     {
         if(!isset($this->_oxalisDB))
         {
@@ -189,6 +189,8 @@ class OxalisCli
 
         $selectQuery    = "SELECT \n";
         $selectQuery    .= "    msgCont.id, \n";
+        $selectQuery    .= "    msg.received, \n";
+        $selectQuery    .= "    msgCont.updated_by, \n";
         $selectQuery    .= "    msg.message_uuid, \n";
         $selectQuery    .= "    msg.receiver, \n";
         $selectQuery    .= "    msgCont.data \n";
@@ -199,11 +201,11 @@ class OxalisCli
         $selectQuery    .= "    ON msgCont.id = msg.message_content_id \n";
         $selectQuery    .= "WHERE \n";
         $selectQuery    .= isset($endpoint)?"    msg.receiver LIKE '%$endpoint' AND \n":"";
-        $selectQuery    .= "    msg.direction = 'IN' AND \n";
-        $selectQuery    .= "    (\n";
-        $selectQuery    .= "        (msgCont.updated_by IS NULL) OR \n";
-        $selectQuery    .= "        (msgCont.updated_by != '$this->_cliId') \n";
-        $selectQuery    .= "    );\n";
+        $selectQuery    .= "    msgCont.data IS NOT NULL AND \n";
+        if($unread)
+            $selectQuery    .= "    msgCont.updated_by IS NULL AND \n";
+        $selectQuery    .= "    msg.direction = 'IN' \n";
+        $selectQuery    .= ";\n";
 
         $res = $this->_oxalisDB->query($selectQuery);
         while ($r = $res->fetch_assoc())
