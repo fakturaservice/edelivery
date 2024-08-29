@@ -73,48 +73,146 @@
     <xsl:variable name="TaxCurrencyCode" select="/*/cbc:TaxCurrencyCode"/>
 
     <!-- Sum of LineExtensionAmount for StandardRated with DocumentCurrencyCode condition -->
+<!--    <xsl:variable name="SumLineExtensionAmountS" select="-->
+<!--        sum(/inv:Invoice/cac:InvoiceLine[-->
+<!--            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'StandardRated' and-->
+<!--            cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode-->
+<!--        ]/cbc:LineExtensionAmount |-->
+<!--        /cre:CreditNote/cac:CreditNoteLine[-->
+<!--            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'StandardRated' and-->
+<!--            cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode-->
+<!--        ]/cbc:LineExtensionAmount-->
+<!--        )-->
+<!--    "/>-->
+
+
     <xsl:variable name="SumLineExtensionAmountS" select="
-        sum(/inv:Invoice/cac:InvoiceLine[
+    sum(
+        /inv:Invoice/cac:InvoiceLine[
             cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'StandardRated' and
             cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode
-        ]/cbc:LineExtensionAmount |
+        ]/cbc:LineExtensionAmount
+    )
+    +
+    sum(
         /cre:CreditNote/cac:CreditNoteLine[
             cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'StandardRated' and
             cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode
         ]/cbc:LineExtensionAmount
-        )
-    "/>
+    )
+    +
+    sum(
+        /inv:Invoice/cac:AllowanceCharge[
+            cac:TaxCategory/cbc:ID = 'StandardRated' and
+            cbc:Amount/@currencyID = $DocumentCurrencyCode
+        ]/cbc:Amount * (if (cbc:ChargeIndicator = 'true') then 1 else -1)
+    )
+    +
+    sum(
+        /cre:CreditNote/cac:AllowanceCharge[
+            cac:TaxCategory/cbc:ID = 'StandardRated' and
+            cbc:Amount/@currencyID = $DocumentCurrencyCode
+        ]/cbc:Amount * (if (cbc:ChargeIndicator = 'true') then 1 else -1)
+    )
+    " />
+
     <xsl:variable name="StandardRatedCount" select="count(//cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='StandardRated'] | //cac:CreditNoteLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='StandardRated'])"/>
     <!--    <xsl:variable name="StandardRatedCount" select="count(//cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='StandardRated'])"/>-->
 
     <!-- Sum of LineExtensionAmount for ZeroRated with DocumentCurrencyCode condition -->
+<!--    <xsl:variable name="SumLineExtensionAmountZ" select="-->
+<!--        sum(/inv:Invoice/cac:InvoiceLine[-->
+<!--            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ZeroRated' and-->
+<!--            cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode-->
+<!--        ]/cbc:LineExtensionAmount |-->
+<!--        /cre:CreditNote/cac:CreditNoteLine[-->
+<!--            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ZeroRated' and-->
+<!--            cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode-->
+<!--        ]/cbc:LineExtensionAmount-->
+<!--        )-->
+<!--    "/>-->
+
+
     <xsl:variable name="SumLineExtensionAmountZ" select="
-        sum(/inv:Invoice/cac:InvoiceLine[
+    sum(
+        /inv:Invoice/cac:InvoiceLine[
             cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ZeroRated' and
             cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode
-        ]/cbc:LineExtensionAmount |
+        ]/cbc:LineExtensionAmount
+    )
+    +
+    sum(
         /cre:CreditNote/cac:CreditNoteLine[
             cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ZeroRated' and
             cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode
         ]/cbc:LineExtensionAmount
-        )
-    "/>
+    )
+    +
+    sum(
+        /inv:Invoice/cac:AllowanceCharge[
+            cac:TaxCategory/cbc:ID = 'ZeroRated' and
+            cbc:Amount/@currencyID = $DocumentCurrencyCode
+        ]/cbc:Amount * (if (cbc:ChargeIndicator = 'true') then 1 else -1)
+    )
+    +
+    sum(
+        /cre:CreditNote/cac:AllowanceCharge[
+            cac:TaxCategory/cbc:ID = 'ZeroRated' and
+            cbc:Amount/@currencyID = $DocumentCurrencyCode
+        ]/cbc:Amount * (if (cbc:ChargeIndicator = 'true') then 1 else -1)
+    )
+    " />
+
+
+
     <xsl:variable name="ZeroRatedCount" select="count(//cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='ZeroRated'] | //cac:CreditNoteLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='ZeroRated'])"/>
     <!--    <xsl:variable name="ZeroRatedCount" select="count(//cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='ZeroRated'])"/>-->
 
 
     <!-- Sum of LineExtensionAmount for ReverseCharge with DocumentCurrencyCode condition -->
+<!--    <xsl:variable name="SumLineExtensionAmountAE" select="-->
+<!--        sum(/inv:Invoice/cac:InvoiceLine[-->
+<!--            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ReverseCharge' and-->
+<!--            cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode-->
+<!--        ]/cbc:LineExtensionAmount |-->
+<!--        /cre:CreditNote/cac:CreditNoteLine[-->
+<!--            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ReverseCharge' and-->
+<!--            cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode-->
+<!--        ]/cbc:LineExtensionAmount-->
+<!--        )-->
+<!--    "/>-->
+
     <xsl:variable name="SumLineExtensionAmountAE" select="
-        sum(/inv:Invoice/cac:InvoiceLine[
+    sum(
+        /inv:Invoice/cac:InvoiceLine[
             cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ReverseCharge' and
             cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode
-        ]/cbc:LineExtensionAmount |
+        ]/cbc:LineExtensionAmount
+    )
+    +
+    sum(
         /cre:CreditNote/cac:CreditNoteLine[
             cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID = 'ReverseCharge' and
             cbc:LineExtensionAmount/@currencyID = $DocumentCurrencyCode
         ]/cbc:LineExtensionAmount
-        )
-    "/>
+    )
+    +
+    sum(
+        /inv:Invoice/cac:AllowanceCharge[
+            cac:TaxCategory/cbc:ID = 'ReverseCharge' and
+            cbc:Amount/@currencyID = $DocumentCurrencyCode
+        ]/cbc:Amount * (if (cbc:ChargeIndicator = 'true') then 1 else -1)
+    )
+    +
+    sum(
+        /cre:CreditNote/cac:AllowanceCharge[
+            cac:TaxCategory/cbc:ID = 'ReverseCharge' and
+            cbc:Amount/@currencyID = $DocumentCurrencyCode
+        ]/cbc:Amount * (if (cbc:ChargeIndicator = 'true') then 1 else -1)
+    )
+    " />
+
+
     <xsl:variable name="ReverseChargeCount" select="count(//cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='ReverseCharge'] | //cac:CreditNoteLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='ReverseCharge'])"/>
     <!--    <xsl:variable name="ReverseChargeCount" select="count(//cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:ID[text()='ReverseCharge'])"/>-->
 
@@ -1273,12 +1371,11 @@
                 <cac:TaxSubtotal>
                     <cbc:TaxableAmount>
                         <xsl:attribute name="currencyID" select="$DocumentCurrencyCode"/>
-                        <!--                            <xsl:value-of select="format-number($SumLineExtensionAmountS, '0.00')"/>-->
-                        <xsl:value-of select="format-number($TaxExclusiveAmount, '0.00')"/>
+                        <xsl:value-of select="format-number($SumLineExtensionAmountS, '0.00')"/>
                     </cbc:TaxableAmount>
                     <cbc:TaxAmount>
                         <xsl:attribute name="currencyID" select="$DocumentCurrencyCode"/>
-                        <xsl:value-of select="format-number($SumTaxAmount, '0.00')"/>
+                        <xsl:value-of select="format-number($SumLineExtensionAmountS * 0.25, '0.00')"/>
                     </cbc:TaxAmount>
                     <cac:TaxCategory>
                         <cbc:ID>S</cbc:ID>
