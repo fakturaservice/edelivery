@@ -13,7 +13,10 @@ class Converter2
     private string $_className;
     private LoggerInterface $_log;
 
-    public function __construct(LoggerInterface $logger, string $xsltFilePath, string $saxonApiUrl)
+    public function __construct(
+        LoggerInterface $logger,
+        string $saxonApiUrl,
+        string $xsltFilePath= __DIR__ . "/resources/XSLT/OIOUBL-21_2_PEPPOL-BIS3.xslt")
     {
         $this->_className       = basename(str_replace('\\', '/', get_called_class()));
         $this->_log             = $logger;
@@ -83,13 +86,10 @@ class Converter2
                 curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
                 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
             }
         }
-
         $curlResponse = curl_exec($ch);
         curl_close($ch);
-
         return trim($curlResponse);
     }
 }

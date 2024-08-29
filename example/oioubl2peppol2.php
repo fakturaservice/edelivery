@@ -66,7 +66,7 @@ try
     $outputXml = $dom->saveXML();
     file_put_contents($oioublFilepath, $outputXml);
 
-    $converter      = new Converter2(new Logger($debugLevel), $xsltFilePath, $saxonCApiUrl);
+    $converter      = new Converter2(new Logger($debugLevel), $saxonCApiUrl, $xsltFilePath);
     $xmlOutputFile  = $converter->convert($oioublFilepath);
 
     $xml = simplexml_load_string($xmlOutputFile);
