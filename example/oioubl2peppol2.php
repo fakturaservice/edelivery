@@ -20,6 +20,7 @@ try
     $environment    = getenv('APP_ENV');
     $configuration  = parse_ini_file(__DIR__ . "/config.ini", true);
     $debugLevel     = $configuration[$environment]["debugLevel"];
+    $saxonCApiUrl   = $configuration[$environment]["saxonCApiUrl"];
     $log            = new Logger($debugLevel);
     $log->setChannel(basename(__FILE__));
 
@@ -65,7 +66,7 @@ try
     $outputXml = $dom->saveXML();
     file_put_contents($oioublFilepath, $outputXml);
 
-    $converter      = new Converter2(new Logger($debugLevel), $xsltFilePath);
+    $converter      = new Converter2(new Logger($debugLevel), $xsltFilePath, $saxonCApiUrl);
     $xmlOutputFile  = $converter->convert($oioublFilepath);
 
     $xml = simplexml_load_string($xmlOutputFile);

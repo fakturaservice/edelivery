@@ -9,15 +9,24 @@ use Fakturaservice\Edelivery\util\LoggerInterface;
 class Converter2
 {
     private string $_xsltFilePath;
+    private string $_saxonApiUrl;
     private string $_className;
     private LoggerInterface $_log;
 
-    public function __construct(LoggerInterface $logger, string $xsltFilePath)
+    public function __construct(LoggerInterface $logger, string $xsltFilePath, string $saxonApiUrl)
     {
         $this->_className       = basename(str_replace('\\', '/', get_called_class()));
         $this->_log             = $logger;
         $this->_log->setChannel($this->_className);
         $this->_xsltFilePath    = $xsltFilePath;
+        $this->_saxonApiUrl     = $saxonApiUrl;
+
+        preg_match(
+            '/\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/',
+            $this->_saxonApiUrl,
+            $validUrl);
+        if(empty($validUrl))
+            $this->_log->log("Saxon API Url('$this->_saxonApiUrl') Invalid", Logger::LV_1, Logger::LOG_ERR);
     }
     public function __destruct()
     {
@@ -48,7 +57,7 @@ class Converter2
         string $outputFormat=null
     ): string
     {
-        $ch = curl_init("139.162.133.199/saxon_api/$api");
+        $ch = curl_init("$this->_saxonApiUrl/$api");
         switch($api)
         {
             case "transform/":
