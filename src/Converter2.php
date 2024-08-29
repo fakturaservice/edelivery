@@ -11,17 +11,13 @@ class Converter2
     private string $_xsltFilePath;
     private string $_className;
     private LoggerInterface $_log;
-//    private bool $_isSaxonLibInstalled;
 
     public function __construct(LoggerInterface $logger, string $xsltFilePath)
     {
         $this->_className       = basename(str_replace('\\', '/', get_called_class()));
         $this->_log             = $logger;
         $this->_log->setChannel($this->_className);
-
-        $this->_xsltFilePath        = $xsltFilePath;
-//        $this->_isSaxonLibInstalled = !empty(array_intersect(['Saxon/C', 'saxonc'], array_map('strtolower', get_loaded_extensions())));
-
+        $this->_xsltFilePath    = $xsltFilePath;
     }
     public function __destruct()
     {
@@ -33,49 +29,17 @@ class Converter2
     public function convert($oioublXmlPath): string
     {
         $saxonVersion   = $this->saxon("");
-
-        if(empty($saxonVersion))
+        preg_match('/saxon/i', $saxonVersion, $saxonHasVersion);
+        if(empty($saxonHasVersion))
         {
             $this->_log->log("Saxon/C is not installed", Logger::LV_3, Logger::LOG_ERR);
             return "";
         }
 
-//        $saxonProc   = new \Saxon\SaxonProcessor();
-
         $this->_log->log("Saxon/C version: $saxonVersion");
-
         $xhtml      = $this->saxon("transform/", file_get_contents($oioublXmlPath), file_get_contents($this->_xsltFilePath));
-
-//        $xsltProc   = $saxonProc->newXslt30Processor();
-//
-//        // LOAD XSLT SCRIPT
-//        $executable = $xsltProc->compileFromFile($this->_xsltFilePath);
-//        $xhtml      = $executable->transformFileToString($oioublXmlPath);
-//        if($xhtml == NULL)
-//        {
-//            if($executable->exceptionOccurred())
-//            {
-//                $errorStr   = "\n<b>(HTML) XSD Error:</b></br>\n----------------</br>\n</br>\n";
-//                $errCode    = $executable->getErrorCode();
-//                $errMessage = $executable->getErrorMessage();
-//                $errorStr   .= 'Expected error: Code='.$errCode.' Message='.$errMessage;
-//                $xsltProc->exceptionClear();
-//
-//                unset($xsltProc);
-//                unset($saxonProc);
-//                $this->_log->log("Failed converting:\n$errorStr", Logger::LV_3, Logger::LOG_ERR);
-//                return "";
-//            }
-//        }
-//
-//        $xsltProc->clearParameters();
-//        unset($xsltProc);
-//        unset($saxonProc);
-
         $this->_log->log("Succeed converting document");
-
         return $xhtml;
-
     }
 
     private function saxon(
