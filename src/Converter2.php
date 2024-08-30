@@ -40,22 +40,30 @@ class Converter2
      */
     public function convert($oioublXmlPath): string
     {
-        $saxonVersion   = $this->saxon("");
+        $httpResponse = 0;
+        $saxonVersion   = $this->saxon("", $httpResponse);
+        if($httpResponse != 200)
+            $this->_log->log("SaxonApi service failed. Http response code: $httpResponse", Logger::LV_1, Logger::LOG_ERR);
         preg_match('/saxon/i', $saxonVersion, $saxonHasVersion);
         if(empty($saxonHasVersion))
         {
-            $this->_log->log("Saxon/C is not installed", Logger::LV_3, Logger::LOG_ERR);
+            $this->_log->log("Saxon/C is not installed", Logger::LV_1, Logger::LOG_ERR);
             return "";
         }
-
         $this->_log->log("Saxon/C version: $saxonVersion");
-        $xhtml      = $this->saxon("transform/", file_get_contents($oioublXmlPath), file_get_contents($this->_xsltFilePath));
-        $this->_log->log("Succeed converting document");
+
+        $httpResponse = 0;
+        $xhtml  = $this->saxon("transform/", $httpResponse, file_get_contents($oioublXmlPath), file_get_contents($this->_xsltFilePath));
+        if($httpResponse != 200)
+            $this->_log->log("SaxonApi service failed. Http response code: $httpResponse", Logger::LV_1, Logger::LOG_ERR);
+        else
+            $this->_log->log("Succeed converting document");
         return $xhtml;
     }
 
     private function saxon(
         string $api,
+        int &$httpResponse,
         string $inputXml=null,
         string $outputFormat=null
     ): string
@@ -88,7 +96,8 @@ class Converter2
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             }
         }
-        $curlResponse = curl_exec($ch);
+        $curlResponse   = curl_exec($ch);
+        $httpResponse   = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         curl_close($ch);
         return trim($curlResponse);
     }

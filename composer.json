@@ -4,7 +4,7 @@
     "description": "PHP Library for sending and receiving eDocuments on PEPPOL or NEMHANDEL network",
     "keywords": ["onlineregnskab.dk","api","sdk","accounting", "eDelivery"],
     "license": "proprietary",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "authors": [
         {
             "name": "Torben W Laursen",
