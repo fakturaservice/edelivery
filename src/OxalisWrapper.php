@@ -289,8 +289,8 @@ class OxalisWrapper
             CatalogueType::EndUserStatisticsReport
         ]))
             $this->_log->log("'$firstElementTagName' Is not a valid document type", Logger::LV_1, Logger::LOG_ERR);
-
-        $this->_log->log("'$firstElementTagName' was found to be a valid document type");
+        else
+            $this->_log->log("'$firstElementTagName' was found to be a valid document type");
         return $firstElementTagName;
     }
     /**
