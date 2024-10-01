@@ -103,7 +103,7 @@ class NemLookUpCli
 
         $ownerServices = array_combine(array_column($ownerServices, "NetworkTypeId"), array_values($ownerServices));
         if(NetworkType::getName($networkTypeId) !== "Unknown")
-            return $ownerServices[$networkTypeId];
+            return $ownerServices[$networkTypeId]??[];
         return $ownerServices;
     }
 
