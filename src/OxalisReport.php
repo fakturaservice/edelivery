@@ -151,8 +151,8 @@ class OxalisReport
             }
         }
 
-        $this->_log->log("Transactions:", Logger::LV_2);
-        $this->_log->log($transactions, Logger::LV_2);
+        $this->_log->log("Transactions:");
+        $this->_log->log($transactions);
 
         $SubtotalArrayPerSP_DT_PR   = array_values($SubtotalArrayPerSP_DT_PR);
         $SubtotalElements           = [];
