@@ -389,8 +389,8 @@ class OxalisReport
         $res            = $this->_oxalisDB->query($selectQuery);
         $endUsers       = $res->fetch_all(MYSQLI_ASSOC);
 
-        $this->_log->log("Result:", Logger::LV_2);
-        $this->_log->log($endUsers, Logger::LV_2);
+        $this->_log->log("Result:");
+        $this->_log->log($endUsers);
 
         $uniqueSending = $uniqueReceiving = $uniqueSendingOrReceiving = 0;
         $uniqueSenders = $uniqueReceivers = $uniqueSendersOrReceivers = [];
