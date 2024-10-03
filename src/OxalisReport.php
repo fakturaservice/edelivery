@@ -95,12 +95,12 @@ class OxalisReport
         $endDate->add(new DateInterval("P1M"));
 
         $endUsers   = $this->getEUSTEndUsers($startDate, $endDate);
-        $this->_log->log("END USER XML ARRAY:", Logger::LV_3);
-        $this->_log->log($endUsers, Logger::LV_3);
+        $this->_log->log("END USER XML ARRAY:");
+        $this->_log->log($endUsers);
 
         $xml        = $this->generateEUSTXml($endUsers, $startDate, $endDate, $reporterCertCN);
 
-        $this->_log->log("END USER XML RESULT:\n$xml", Logger::LV_2);
+        $this->_log->log("END USER XML RESULT:\n$xml");
 
         return $xml;
     }
